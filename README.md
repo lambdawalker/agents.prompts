@@ -6,6 +6,7 @@ Reusable prompts for AI coding agents.
 | --- | --- |
 | [Multi-repository documentation](prompts/multi-repository-documentation.md) | Establishing documentation ownership across a design repository and implementation repositories, removing duplication, and reviewing or consolidating design branches. |
 | [AI-agent documentation](prompts/ai-agent-documentation.md) | Creating repository documentation that helps agents use, integrate, maintain, and troubleshoot a project, including API contracts, recipes, limitations, and validation. |
+| [Android library publishing](prompts/android-library-publishing.md) | Building a signed Maven Central release workflow with automatic versioning, pending-release recovery, generated IMPORT.md, and validation. |
 
 ## Usage
 
