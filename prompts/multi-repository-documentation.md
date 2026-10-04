@@ -7,6 +7,7 @@ INPUTS
 - Target branch: [main]
 - Branch consolidation: [review only / consolidate into target]
 - Delivery: [local changes / pull requests / commit to target]
+- Release automation scope: [audit and document / implement release-documentation integration]
 
 OBJECTIVE
 
@@ -37,10 +38,38 @@ Implementation repositories:
 
 The design repository explains what the system must do and why. Module repositories explain how their implementations work and how to operate them.
 
+PUBLISHING AND INSTALLATION DOCUMENTATION
+
+For repositories that publish reusable artifacts, give installation instructions and released versions one authoritative home in the publishing repository. Prefer a root IMPORT.md, or reuse an established equivalent. Design and consuming repositories link to it instead of maintaining copies of coordinates or “latest version” snippets.
+
+Separate ownership:
+- Release tags or an established verified release ledger: release history and version progression.
+- Build/publishing configuration: artifact coordinates and publication behavior.
+- An editable template, preferably docs/templates/IMPORT.md.template: installation prose and supported dependency-manager examples.
+- Build tooling: deterministic rendering from the template, actual coordinates, and an explicit release version.
+- IMPORT.md: committed generated reference for the latest successfully published release.
+- Publish workflow: orchestration and post-publication updates.
+
+Adapt this model to the actual ecosystem. Do not impose Gradle or Maven on unrelated projects or introduce a publication system for a module that is not distributed as an artifact. Account for multiple artifacts, independent version streams, and prerelease channels.
+
+For Gradle/Maven projects, prefer generateImportDocs and an explicit -PreleaseVersion value reused by publication and rendering. Obtain coordinates from existing publishing configuration; keep Markdown templates out of workflow YAML. Include applicable Kotlin DSL, Groovy DSL, version-catalog, and Maven examples in IMPORT.md, with a generated-file notice identifying its template and regeneration command.
+
+Derive release versions from confirmed publication history using semantic version ordering and the repository's release policy; default patch progression may be appropriate. Do not infer published versions from github.run_number, an unreleased build variable, or an unverified tag. Handle the first release explicitly. Preserve sound existing conventions and avoid duplicate version variables or version-bump-only source commits.
+
+The publish workflow must advance the installation reference only after the intended artifacts are confirmed published under the registry's success criteria. An upload or staging acceptance is not necessarily completed publication. Failed or partial publication must not advertise the attempted version as the latest release.
+
+When release automation changes are in scope, modify the existing workflow. Serialize version allocation and release bookkeeping, preserve the exact source commit in release tags, and handle reruns, existing tags, and partial failures without republishing immutable artifacts. If publication succeeds but documentation generation, tagging, or Git push fails, retain a recoverable record of the published version and source commit. Retry bookkeeping for that release rather than allocating or publishing it again. Use minimal workflow permissions, avoid self-triggering release loops, preserve concurrent repository changes, and commit generated documentation only when it changes.
+
+Replace duplicated current-version installation instructions in READMEs, websites, agent guides, and cross-repository docs with links to the authoritative reference. Preserve intentional historical/migration version references and local-project sample dependencies. Current-source API documentation must not imply that unreleased APIs are available in the latest published artifact.
+
+Contributor instructions should explain the version source, template, renderer, release workflow, and failure recovery. Agent guidance must explicitly require reading IMPORT.md for dependency coordinates and released-version questions rather than guessing.
+
+Audit/document mode records missing automation and proposed changes without claiming they exist. Implementation mode includes the build/template/workflow changes needed for this model; it does not authorize an actual package release.
+
 WORKFLOW
 
 1. Audit before editing.
-Read repository instructions, documentation, relevant source code, tests, build scripts, deployment configuration, and CI workflows. Inventory documentation in all repositories and inspect every branch in the design repository.
+Read repository instructions, documentation, relevant source code, tests, build scripts, deployment configuration, and CI workflows, including publishing history, installation templates, and generated references. Inventory documentation in all repositories and inspect every branch in the design repository.
 
 Identify:
 - Duplicated explanations.
@@ -87,15 +116,16 @@ When consolidation is authorized, incorporate all relevant unique work into the 
 6. Validate and deliver.
 Check relative links, cross-repository paths, heading anchors, diagrams, and referenced source locations. Verify commands against repository scripts and configuration. Do not execute deployments or destructive commands merely to validate documentation.
 
-Confirm that useful information survived the reorganization and that only intended files changed. Verify published content after committing or merging.
+Confirm that useful information survived the reorganization and that only intended files changed. Verify published content after committing or merging. For generated installation documentation, verify deterministic rendering, unresolved placeholders, and agreement with confirmed release metadata. Detect template/coordinate drift without advancing the documented version to an unreleased build. Preserve metadata for the last published coordinates when development coordinates change. Check failure and rerun behavior when modifying release automation.
 
-Keep this task focused on documentation. Report implementation defects separately unless fixing them is explicitly authorized.
+Keep this task focused on documentation and the selected release automation scope. Report unrelated implementation defects separately unless fixing them is explicitly authorized.
 
 FINAL REPORT
 
 Summarize:
 - What changed in each repository.
-- Where architecture and implementation guidance now live.
+- Where architecture, implementation guidance, and authoritative installation/version information now live.
+- Release-documentation ownership, automation changes or remaining gaps, and failure-safety validation.
 - Which branches were consolidated and which remain unresolved.
 - Validation performed and its limitations.
 - Remaining contradictions, missing decisions, or inaccessible information.

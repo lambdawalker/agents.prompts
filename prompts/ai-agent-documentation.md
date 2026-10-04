@@ -49,6 +49,8 @@ It should answer:
 - What architectural rules must not be violated?
 - What public API compatibility rules exist?
 - Which generated files should not be manually edited?
+- Where are the authoritative installation reference, its editable template, and regeneration instructions?
+- How are released versions distinguished from development versions?
 - What documentation must be updated when behavior changes?
 - Are there repository-specific conventions or gotchas?
 - Where should an agent look for deeper information?
@@ -99,7 +101,7 @@ An agent should be able to read this page and make a reasonable first implementa
 
 4. quickstart.md
 
-Provide the smallest complete, correct, idiomatic integration.
+Provide the smallest complete, correct, idiomatic integration. Link to IMPORT.md (or the established authoritative installation reference) for dependency declarations and released versions instead of copying them into quickstart. Keep the usage example here.
 
 Examples must contain enough context to actually understand how they are used.
 
@@ -403,7 +405,7 @@ Clearly identify documentation version when relevant.
 
 Document:
 
-- Current library version.
+- Current published version, obtained from the authoritative installation reference rather than repeated in independently maintained pages.
 - Minimum supported platform/runtime.
 - Important dependency requirements.
 - Breaking changes.
@@ -416,6 +418,34 @@ When old code must no longer be generated, explicitly say:
 "Do not generate new code using X."
 
 Do not assume an AI agent knows which online examples are obsolete.
+
+PUBLISHING AND AUTHORITATIVE INSTALLATION GUIDANCE
+
+For a project that publishes packages, use one canonical installation/version reference, preferably IMPORT.md at the repository root. Reuse an established equivalent where appropriate. For projects without published artifacts, document the actual source-based setup; do not invent releases or add irrelevant publishing infrastructure.
+
+IMPORT.md should describe the latest successfully published release, actual artifact coordinates, applicable package-manager installation forms, and multi-artifact/version distinctions. It should be generated and committed from an editable template, preferably docs/templates/IMPORT.md.template, using the build's publishing metadata and an explicit confirmed release version. Mark it as generated and identify the template and regeneration command.
+
+For Gradle/Maven, prefer a deterministic generateImportDocs task accepting -PreleaseVersion and drawing coordinates from existing publishing configuration. Include applicable Kotlin DSL, Groovy, version-catalog, and Maven examples in this reference. Adapt the mechanism to other ecosystems; do not duplicate coordinates in unrelated constants or embed large templates in CI YAML.
+
+Add an explicit instruction in existing contributor and consumer-agent entry points:
+“Read IMPORT.md before answering questions about installation, dependency coordinates, or the current released version. Use the values documented there. Do not guess versions, use workflow run numbers, or treat development configuration as evidence of publication. Edit the template and regenerate; do not manually edit the generated reference.”
+
+If the reference is missing, stale, or conflicts with registry/release evidence, report the discrepancy and verify the release before changing it. Do not fabricate a latest version. Unreleased source behavior must be labeled separately from behavior supported by the documented published release.
+
+Link README, quickstart, recipes, website pages, and llms.txt to that reference. Avoid independently maintained versioned dependency snippets. Keep intentional migration history, compatibility ranges, lockfiles, and samples using local project dependencies; these serve different purposes.
+
+Inspect and document the existing release mechanism:
+- Prefer semantic release tags or a verified release ledger as persistent version history. Sort versions semantically, distinguish prereleases and independent module streams, and handle the initial release explicitly.
+- Pass the selected version explicitly through one mechanism to all relevant publications and the documentation renderer. Do not use github.run_number as the library version or add competing version sources.
+- Update IMPORT.md only after the intended publication is confirmed successful. Upload/staging success alone may be insufficient. Failed or partial releases must not advance the documented latest release.
+- Preserve artifact provenance: release tags should identify the source commit used to build the artifact; a later generated-documentation commit can remain separate.
+- Prevent concurrent version allocation, duplicate immutable publication, and release loops caused by bot documentation commits.
+- Define recovery when publication succeeds but rendering, tagging, or Git push fails. Recover the same published version and source commit; do not blindly republish or allocate another release.
+- Use minimal workflow permissions, preserve concurrent changes, and create a bot commit only when generated content changes.
+
+Document template ownership, generation and verification commands, release success criteria, and failure recovery in contributor/build guidance. Do not claim automation exists unless it is implemented and verified. If release tooling changes are outside the requested scope, document the gap and recommendation. When authorized, adapt the existing workflow and build tooling rather than introducing a competing release path. Do not perform an actual publication solely to validate documentation.
+
+Validate deterministic rendering, correct coordinates/version for each artifact, absence of unresolved placeholders, and links to the reference. A verifyImportDocs task or equivalent CI check should detect drift using the last confirmed release metadata, not the next development version. Preserve published coordinates if current build configuration has changed. Test failure/rerun paths with fixtures or mocks when changing automation; a failed publish must leave the latest-release reference unchanged.
 
 LLMS.TXT
 
@@ -432,6 +462,7 @@ It should contain:
 - What the project is for.
 - Link to the agent entry page.
 - Link to quickstart.
+- Link to the authoritative installation and published-version reference.
 - Link to public API documentation.
 - Link to concepts.
 - Link to recipes.
@@ -592,7 +623,7 @@ Design approximately 10 to 20 realistic tasks an AI coding agent should be able 
 
 Examples include:
 
-- Install the project.
+- Install the project using the authoritative released-version reference without guessing coordinates or versions.
 - Implement the simplest supported use case.
 - Use several related APIs correctly.
 - Handle a failure condition.
@@ -623,7 +654,7 @@ It should provide:
 
 - Brief project description.
 - Main use case.
-- Short installation example.
+- A concise installation link to IMPORT.md or the established canonical reference; keep versioned dependency examples in that reference.
 - Minimal usage example.
 - Link to complete documentation.
 - Link to agent documentation when appropriate.
@@ -673,7 +704,7 @@ Before changing documentation:
 6. Inspect tests.
 7. Inspect build and dependency configuration.
 8. Inspect CI.
-9. Inspect release/publishing configuration.
+9. Inspect release/publishing configuration, confirmed release history, installation templates, and generated-version references.
 10. Identify lifecycle rules.
 11. Identify threading/concurrency behavior.
 12. Identify resource ownership.
