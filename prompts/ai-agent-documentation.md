@@ -1,3 +1,7 @@
+# AI-agent documentation — specialist supplement
+
+For a complete human website, demos, screenshots, and agent documentation workflow, start with [Standalone library documentation](standalone-library-documentation.md) or [System-integrated library documentation](system-integrated-library-documentation.md). Use this prompt independently for a focused agent-documentation audit, or as the deeper API-contract checklist within either primary workflow. It does not replace their site and screenshot requirements.
+
 You are acting as a senior software architect, developer advocate, API designer, and AI-agent documentation specialist.
 
 Your task is to analyze this repository and create or improve the documentation needed for an AI coding agent to correctly understand, use, integrate, modify, and troubleshoot the project.
