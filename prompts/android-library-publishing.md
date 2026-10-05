@@ -8,8 +8,8 @@ INPUTS
 - Publishing environment: [maven-central]
 - Propagation-delay environment: [delayed-docs; owner configures a 15-minute wait timer]
 - Public-artifact polling budget: [40 minutes; finalization job timeout 50 minutes]
-- Version policy: [automatic stable patch increments; explicitly define any major/minor or prerelease policy]
-- First release version, if nothing has been published: [explicitly supplied value or ask]
+- Version policy: [one optional version field; blank means 0.1.0 for the first release or latest confirmed stable version + one patch]
+- Explicit version override: [stable X.Y.Z, newer than existing history; prereleases require a separately agreed policy]
 - Delivery: [local changes / pull request / commit to target branch]
 
 REFERENCE
@@ -45,13 +45,13 @@ Use existing compatible tooling where sound. The reference uses com.vanniktech.m
 
 Supply accurate POM name, description, project URL, license, developer information, and SCM links. Never assume the target project's license from the reference.
 
-For multiple artifacts, explicitly define whether versions are shared or independent and what constitutes a complete release.
+For multiple artifacts, explicitly define whether versions are shared or independent and what constitutes a complete release. For independently released libraries, provide one dedicated manual publishing workflow per library, each fixing its own module internally and calling a shared reusable implementation. Keep version histories, reservations, and confirmed metadata separate; finalizing one module must preserve sibling metadata. Do not ask the user to select the module again inside its dedicated action.
 
 2. CENTRALIZE COORDINATES AND VERSION INPUT
 
 Keep coordinates in one authoritative build configuration and use them for both publication and documentation rendering.
 
-Expose one explicit release version input, such as:
+Expose exactly one optional manual publishing input named `version` (string, default empty). Use a clear description such as: "Optional X.Y.Z. Blank: first release 0.1.0, otherwise next patch." Do not expose separate `initial_version` and `resume_version` fields. Resolve this optional input to a concrete version before invoking Gradle, such as:
 ./gradlew :library:publishAndReleaseToMavenCentral -PreleaseVersion=X.Y.Z
 
 Use the actual task names supported by the selected plugin. Development builds must work without release credentials or a release version. A development snapshot fallback must never silently become a stable Central publication. Validate the explicit version before any remote publication side effect.
@@ -62,17 +62,23 @@ Avoid competing version properties and pre-release source commits that only bump
 
 Fetch full Git history and tags. Select versions with semantic ordering, not lexical ordering, tag dates, or github.run_number.
 
-For the default policy, increment the latest confirmed stable patch version. Distinguish stable releases, prereleases, unrelated tags, and module-specific version streams.
+Apply the single version field as follows:
+- Blank or whitespace-only, with no release history: use 0.1.0 without asking for an initial version.
+- Blank, with existing confirmed stable history: increment only the patch component, for example 0.1.2 → 0.1.3 or 1.2.9 → 1.2.10. Do not roll patch 9 into the minor component.
+- Explicit stable X.Y.Z: use that value for a first or subsequent release. With existing history, require it to be strictly newer than the latest release; this permits deliberate minor or major releases.
+- Reject malformed versions, unsupported prereleases/snapshots, already-used versions, and downgrades before reservation or upload. A supplied version must not bypass provenance checks or unresolved-attempt guards.
+
+Distinguish stable releases, prereleases, unrelated tags, and module-specific version streams. For independent modules, calculate against only the selected module's history. Preserve verified module history across artifact renames when that is the repository's migration policy; do not mistake a renamed coordinate for an entirely new module or rewrite historical publication facts.
 
 Reconcile Git release tags with Central metadata. Stop for investigation when publication history and tags disagree. A tag alone does not prove publication, and a public artifact alone does not prove its source SHA.
 
-If Central already has releases but tags are absent, bootstrap progression from verified published metadata without inventing historical provenance. If no release exists, require an explicit initial-version policy. Network errors must not be interpreted as an empty registry.
+If Central already has releases but tags are absent, bootstrap progression from verified published metadata without inventing historical provenance. If no release exists, apply the 0.1.0 default or the supplied stable version override. Network errors must not be interpreted as an empty registry.
 
 Record the exact source SHA and complete intended publication set before building.
 
 4. BUILD A CONTROLLED WORKFLOW
 
-Prefer workflow_dispatch on the configured release branch. Ordinary releases should not require manually guessing the next patch number. Provide a clearly separate recovery input such as resume_version.
+Prefer workflow_dispatch on the configured release branch. Ordinary releases should require only choosing the dedicated publishing action and clicking Run workflow; the single `version` field may remain blank. Explain that entering a version requests a new publication, never recovery of an existing one. Keep recovery in the separate manual finalization workflow, not another field on the publishing form.
 
 Split the workflow into three stages: publish, propagation-delay, and finalize. Provide a separate finalization workflow with both workflow_call and workflow_dispatch entry points; automatic and manual confirmation must use the same implementation.
 
@@ -119,7 +125,7 @@ Separate plugin completion from public registry propagation:
 - Propagation-delay job: after successful ordinary publication, reference the secret-free delayed-docs environment with a 15-minute wait timer. The wait is configured in GitHub Settings, not by YAML timeout-minutes. GitHub waits before assigning a runner; use only a short no-op step after the gate opens. Do not substitute a runner sleep or hold the release concurrency lock during this gate.
 - Finalization job: after the gate, call the shared finalization workflow with the reserved version and expected source. Poll public Maven endpoints for up to 2400 seconds (40 minutes), exiting early when complete. Allow a 50-minute execution timeout for setup and final Git operations. This provides roughly 15 + 40 = 55 minutes for propagation after plugin completion, plus queue/setup time; it is not a guaranteed end-to-end duration.
 
-The manual finalization entry point takes an existing version, bypasses the delay, and never builds, allocates, reserves, or uploads artifacts. It must work without Maven/signing secrets. A retained resume_version input should use this same finalizer and skip the delay. Handle skipped dependency jobs explicitly in the automatic finalize condition without allowing failed or cancelled publication to trigger ordinary automatic finalization. Unknown upload outcomes require deliberate manual recovery.
+The manual finalization entry point takes an existing version, bypasses the delay, and never builds, allocates, reserves, or uploads artifacts. It must work without Maven/signing secrets. Do not route an existing version entered in the publishing form to recovery; reject reuse and direct the maintainer to the Finalize action. Handle skipped dependency jobs explicitly in the automatic finalize condition without allowing failed or cancelled publication to trigger ordinary automatic finalization. Unknown upload outcomes require deliberate manual recovery.
 
 After obtaining the mutation lock, fetch remote state again and resolve the requested version from durable records. Validate the expected source when supplied by the publishing job. Reject unknown versions, conflicting tags, inconsistent marker records, or source mismatches. If the same release has already been finalized by the other path, exit successfully without polling, committing, or writing tags. An older completed release must also be a no-op and must never overwrite newer installation metadata, including while a later release is pending. Determine completion from consistent provenance records, not merely the presence of a tag.
 
@@ -185,7 +191,11 @@ Document how a maintainer verifies a definitively failed attempt before clearing
 
 Test helpers with fixtures, mocked registry responses, and temporary Git repositories. Include:
 - Semantic ordering such as 0.1.9 versus 0.1.10.
-- Initial release and no-tags bootstrap.
+- Blank and whitespace-only first-release input selecting 0.1.0; explicit first-version overrides; no-tags bootstrap.
+- Blank subsequent input incrementing the latest patch, and explicit higher patch/minor/major overrides.
+- Reused/older versions and invalid overrides rejected without bypassing provenance or pending-attempt checks.
+- Exactly one optional `version` input on each manual publishing form, forwarded correctly to the shared implementation; recovery only through the dedicated finalizer.
+- Independent module histories and preservation of sibling metadata when applicable.
 - Divergent tags and Central history.
 - Invalid versions and unresolved pending attempts.
 - Recovery resolving the original source and skipping upload.
@@ -201,7 +211,7 @@ Test helpers with fixtures, mocked registry responses, and temporary Git reposit
 - Unknown versions, expected-source mismatches, conflicting tags, and inconsistent markers.
 - Polling success before the deadline, transient failures, timeout, partial artifacts, and hash mismatches.
 - Identical job-level lock keys across publishing and both finalization paths, with the delay outside the lock and no caller/callee lock nesting.
-- Ordinary automatic completion, skipped-delay recovery, and failed/cancelled publication dependency conditions.
+- Ordinary automatic completion, manual finalization bypassing the delay, and failed/cancelled publication dependency conditions.
 
 Run relevant Gradle checks and validate workflow YAML, expressions, shell scripts, and permissions as practical. Keep credentials out of ordinary CI. Report checks that cannot run in the available environment.
 
@@ -211,6 +221,6 @@ Provide the working workflow, build configuration, helpers, focused tests, insta
 
 Include an owner setup checklist: create maven-central with the four documented secret names; create delayed-docs with a 15-minute wait timer, no secrets, and no required reviewers if automatic continuation is intended; allow the release branch where deployment restrictions apply. Verify current GitHub plan/repository-visibility support for wait timers and report limitations. Merely referencing an environment does not configure its timer. Document existing bot contents/tag permissions and branch-protection requirements without requesting bypass tokens. Explicitly distinguish owner setup that remains unverified from settings actually inspected.
 
-The runbook must explain first-time setup, ordinary release, version policy, exact source selection, artifact set, publication success criteria, installation generation, protected-branch handling, site updates, and failure recovery.
+The runbook must show the one-field publishing form, blank-input first/subsequent examples, explicit-version overrides, and the separate recovery action. It must explain first-time setup, ordinary release, version policy, exact source selection, artifact set, publication success criteria, installation generation, protected-branch handling, site updates, and failure recovery.
 
 Finish with a concise report listing changes, validation results, required GitHub/Central setup, limitations, and commit or PR links. State explicitly that no real release was performed unless separately authorized and actually completed.
