@@ -5,14 +5,21 @@ INPUTS
 - Target repository: [REPOSITORY_URL]
 - Release branch: [main]
 - Published modules: [discover from the project, or specify]
-- GitHub environment: [maven-central]
+- Publishing environment: [maven-central]
+- Propagation-delay environment: [delayed-docs; owner configures a 15-minute wait timer]
+- Public-artifact polling budget: [40 minutes; finalization job timeout 50 minutes]
 - Version policy: [automatic stable patch increments; explicitly define any major/minor or prerelease policy]
 - First release version, if nothing has been published: [explicitly supplied value or ask]
 - Delivery: [local changes / pull request / commit to target branch]
 
 REFERENCE
 
-Use https://github.com/lambdawalker/android.apexfission.permissions as an architectural reference. Inspect its current:
+Use https://github.com/lambdawalker/android.apexfission.yolo as the reference for separated publication, delayed verification, and race-safe manual finalization. Inspect its current:
+- .github/workflows/publish-yolo.yml and .github/workflows/finalize-yolo.yml
+- scripts/release.py, scripts/finalize-release.sh, and scripts/tests/
+- docs/releases.md and .github/workflows/verify-release-tooling.yml
+
+Use https://github.com/lambdawalker/android.apexfission.permissions as an additional Android build/publication reference. Inspect its current:
 - .github/workflows/publish-permission.yml
 - permission/build.gradle.kts
 - build.gradle.kts and gradle.properties
@@ -67,7 +74,11 @@ Record the exact source SHA and complete intended publication set before buildin
 
 Prefer workflow_dispatch on the configured release branch. Ordinary releases should not require manually guessing the next patch number. Provide a clearly separate recovery input such as resume_version.
 
-Use a stable concurrency group covering allocation, publication, and finalization, with cancel-in-progress: false. Protect against other publication paths and manual reruns through persistent state as well.
+Split the workflow into three stages: publish, propagation-delay, and finalize. Provide a separate finalization workflow with both workflow_call and workflow_dispatch entry points; automatic and manual confirmation must use the same implementation.
+
+Use one stable, repository-specific JOB-LEVEL concurrency group for the publishing job and the finalizer's mutating job, with cancel-in-progress: false. Cover allocation, reservation, upload, confirmation, and Git finalization with this lock. Keep the delay job outside it. Do not hold a workflow-level or caller-job lock while invoking a reusable workflow that needs the same lock: that can block manual recovery or deadlock the automatic path. Do not use per-run, per-workflow-name, or per-version groups that allow overlapping mutations of shared release history.
+
+Concurrency alone is insufficient: preserve durable reservations and upload-started markers across reruns, runner failures, and non-Actions publication paths. GitHub's default concurrency behavior is not a durable FIFO queue; newer pending requests can replace older pending requests even with cancel-in-progress: false. Document this and make recovery safe to invoke again.
 
 Configure the required JDK, Android SDK/build tools, Gradle wrapper, and any helper runtime according to the target project. Use compatible, explicitly versioned actions and the repository's pinning policy.
 
@@ -87,6 +98,8 @@ Validate required secret presence without printing values. Document Central Port
 Before contacting Central for publication, durably reserve the version and source association. The reference uses release-pending/X.Y.Z pointing to the source commit; an equivalent durable journal is acceptable.
 
 Record or make recoverable:
+- Expected SHA-256 hashes for the complete validated artifact set.
+- A durable upload-started marker created before remote upload; reject a second upload invocation for the same reservation.
 - Version and coordinates for every intended artifact.
 - Exact source SHA.
 - Publication/deployment identifier when available.
@@ -100,9 +113,19 @@ Release tags and pending-attempt references have different meanings. Never adver
 
 Invoke the plugin's actual publish-and-release task, not a staging/upload-only task while claiming completion.
 
-Wait for the intended publication to complete, using bounded timeouts and useful failure messages. Confirm the public POM coordinates and usable release AAR for every intended artifact; verify required companion artifacts as appropriate. Do not equate staging acceptance with public availability.
+Separate plugin completion from public registry propagation:
 
-Handle transient registry errors with bounded retries. Fail clearly on invalid metadata, permanent errors, or partial publication. Availability checks supplement provenance; they do not independently prove who built or uploaded the artifacts.
+- Publish job: validate, reserve, mark upload-started, invoke the actual publish-and-release task, retain useful deployment identifiers/logs, and expose the immutable version/source as job outputs. Waiting performed inside the publishing plugin still consumes this job's runner; do not claim the environment wait removes that work.
+- Propagation-delay job: after successful ordinary publication, reference the secret-free delayed-docs environment with a 15-minute wait timer. The wait is configured in GitHub Settings, not by YAML timeout-minutes. GitHub waits before assigning a runner; use only a short no-op step after the gate opens. Do not substitute a runner sleep or hold the release concurrency lock during this gate.
+- Finalization job: after the gate, call the shared finalization workflow with the reserved version and expected source. Poll public Maven endpoints for up to 2400 seconds (40 minutes), exiting early when complete. Allow a 50-minute execution timeout for setup and final Git operations. This provides roughly 15 + 40 = 55 minutes for propagation after plugin completion, plus queue/setup time; it is not a guaranteed end-to-end duration.
+
+The manual finalization entry point takes an existing version, bypasses the delay, and never builds, allocates, reserves, or uploads artifacts. It must work without Maven/signing secrets. A retained resume_version input should use this same finalizer and skip the delay. Handle skipped dependency jobs explicitly in the automatic finalize condition without allowing failed or cancelled publication to trigger ordinary automatic finalization. Unknown upload outcomes require deliberate manual recovery.
+
+After obtaining the mutation lock, fetch remote state again and resolve the requested version from durable records. Validate the expected source when supplied by the publishing job. Reject unknown versions, conflicting tags, inconsistent marker records, or source mismatches. If the same release has already been finalized by the other path, exit successfully without polling, committing, or writing tags. An older completed release must also be a no-op and must never overwrite newer installation metadata, including while a later release is pending. Determine completion from consistent provenance records, not merely the presence of a tag.
+
+For every intended artifact, confirm public POM identity, usable release AAR, sources, nonempty documentation artifact, Gradle metadata where published, and required detached signatures. Compare public artifacts with the SHA-256 hashes recorded before upload. Signature-file presence alone is not cryptographic signature verification; describe exactly what is checked. Do not equate staging acceptance or plugin success with public availability.
+
+Handle transient registry errors with bounded retries. Stop clearly on contradictory identity/hash metadata or permanent failures. Missing artifacts may still be propagating: poll within the budget, but never finalize a partial artifact set. On timeout or failure, retain attempt markers and leave the confirmed release documentation unchanged. Availability checks supplement provenance; they do not independently prove who built or uploaded the artifacts.
 
 7. GENERATE AUTHORITATIVE INSTALLATION DOCUMENTATION
 
@@ -142,7 +165,7 @@ Prevent bot commits from creating release loops. If generated documentation must
 
 9. MAKE RECOVERY SAFE
 
-Provide an explicit recovery mode that resolves the recorded source/version, verifies the publication, skips uploading, and retries documentation/tag finalization.
+Provide the separate manual finalization action described above. It resolves the recorded source/version and hashes, verifies public artifacts, skips uploading, and retries documentation/tag finalization under the shared mutation lock. It can run during the automatic environment wait. If publication or another finalizer is active, it waits for that lock. The delayed automatic finalizer must safely become a no-op if manual recovery finishes first.
 
 Cover:
 - Validation failure before upload.
@@ -172,12 +195,21 @@ Test helpers with fixtures, mocked registry responses, and temporary Git reposit
 - Generated POM coordinates/version and the intended publication artifacts.
 - Concurrent main changes, existing tags, and finalization failures.
 - Recovery preserving immutable versions and source provenance.
+- Automatic and manual finalization racing for the same release: one mutation and one successful no-op.
+- Manual completion during the environment wait, followed by automatic finalization.
+- A request for an older completed release while newer docs or a newer reservation exist.
+- Unknown versions, expected-source mismatches, conflicting tags, and inconsistent markers.
+- Polling success before the deadline, transient failures, timeout, partial artifacts, and hash mismatches.
+- Identical job-level lock keys across publishing and both finalization paths, with the delay outside the lock and no caller/callee lock nesting.
+- Ordinary automatic completion, skipped-delay recovery, and failed/cancelled publication dependency conditions.
 
 Run relevant Gradle checks and validate workflow YAML, expressions, shell scripts, and permissions as practical. Keep credentials out of ordinary CI. Report checks that cannot run in the available environment.
 
 DELIVERABLES
 
 Provide the working workflow, build configuration, helpers, focused tests, installation template/reference, and release runbook.
+
+Include an owner setup checklist: create maven-central with the four documented secret names; create delayed-docs with a 15-minute wait timer, no secrets, and no required reviewers if automatic continuation is intended; allow the release branch where deployment restrictions apply. Verify current GitHub plan/repository-visibility support for wait timers and report limitations. Merely referencing an environment does not configure its timer. Document existing bot contents/tag permissions and branch-protection requirements without requesting bypass tokens. Explicitly distinguish owner setup that remains unverified from settings actually inspected.
 
 The runbook must explain first-time setup, ordinary release, version policy, exact source selection, artifact set, publication success criteria, installation generation, protected-branch handling, site updates, and failure recovery.
 

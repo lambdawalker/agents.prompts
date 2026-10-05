@@ -48,7 +48,8 @@ Separate ownership:
 - An editable template, preferably docs/templates/IMPORT.md.template: installation prose and supported dependency-manager examples.
 - Build tooling: deterministic rendering from the template, actual coordinates, and an explicit release version.
 - IMPORT.md: committed generated reference for the latest successfully published release.
-- Publish workflow: orchestration and post-publication updates.
+- Publish workflow: validation, reservation, and upload.
+- Shared finalization workflow: public-artifact confirmation and post-publication Git updates, callable automatically and manually.
 
 Adapt this model to the actual ecosystem. Do not impose Gradle or Maven on unrelated projects or introduce a publication system for a module that is not distributed as an artifact. Account for multiple artifacts, independent version streams, and prerelease channels.
 
@@ -59,6 +60,8 @@ Derive release versions from confirmed publication history using semantic versio
 The publish workflow must advance the installation reference only after the intended artifacts are confirmed published under the registry's success criteria. An upload or staging acceptance is not necessarily completed publication. Failed or partial publication must not advertise the attempted version as the latest release.
 
 When release automation changes are in scope, modify the existing workflow. Serialize version allocation and release bookkeeping, preserve the exact source commit in release tags, and handle reruns, existing tags, and partial failures without republishing immutable artifacts. If publication succeeds but documentation generation, tagging, or Git push fails, retain a recoverable record of the published version and source commit. Retry bookkeeping for that release rather than allocating or publishing it again. Use minimal workflow permissions, avoid self-triggering release loops, preserve concurrent repository changes, and commit generated documentation only when it changes.
+
+For Android/Maven Central automation, follow the companion Android library publishing prompt: upload, a secret-free delayed-docs environment gate configured for 15 minutes, then a shared automatic/manual finalizer polling public artifacts for up to 40 minutes. The gate waits without occupying a runner. Publishing and finalization share a fixed job-level mutation lock; the delay holds no lock. Manual finalization bypasses the delay but never uploads. Recheck durable remote state after acquiring the lock, treat already-completed releases as no-ops, and never let older recovery overwrite newer release documentation. Preserve pending markers on timeout or partial publication. Document owner configuration of the environment timer; YAML alone does not set it. Do not impose this timing on unrelated registries without evaluating their requirements.
 
 Replace duplicated current-version installation instructions in READMEs, websites, agent guides, and cross-repository docs with links to the authoritative reference. Preserve intentional historical/migration version references and local-project sample dependencies. Current-source API documentation must not imply that unreleased APIs are available in the latest published artifact.
 
