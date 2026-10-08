@@ -12,7 +12,7 @@ Reusable prompts for AI coding agents. Choose one of the two primary documentati
 | Prompt | Use it for |
 | --- | --- |
 | [AI-agent documentation](prompts/ai-agent-documentation.md) | A deeper API-contract, lifecycle, ownership, troubleshooting, and agent-evaluation audit. |
-| [Android library publishing](prompts/android-library-publishing.md) | Signed Maven Central publication, automatic versioning, a runner-free 15-minute environment wait, up to 40-minute public verification, race-safe manual finalization, and generated IMPORT.md. |
+| [Android library publishing](prompts/android-library-publishing.md) | Maven Central and JitPack publication, independent module versions shared across destinations, recoverable releases, latest-available IMPORT.md, and automatic documentation deployment. |
 
 The former [Multi-repository documentation](prompts/multi-repository-documentation.md) entry redirects to the system-integrated workflow. Its ownership, branch consolidation, and release safeguards have been retained there.
 
