@@ -186,7 +186,11 @@ Without a version override, local regeneration should use the last recorded conf
 
 Replace independently maintained current-version dependency snippets in README, docs, website, and agent guidance with links to IMPORT.md. Preserve migration history, compatibility statements, lockfiles, and samples intentionally using project dependencies.
 
-Explicitly instruct humans and agents to read IMPORT.md for installation, coordinates, and released-version questions rather than guessing.
+Explicitly instruct humans and agents to read IMPORT.md for latest confirmed installation choices, or the selected module/version archive for historical coordinates and matching guides, rather than guessing.
+
+Apply [Versioned and multilingual documentation](versioned-multilingual-documentation.md) for the shared historical documentation policy. Preserve an exact-version catalog of confirmed destination facts before replacing latest pointers, and archive new confirmations with finalization bookkeeping. Same-version catch-up adds a destination only when source identity agrees. Keep archive entries separate from latest-pointer and attempt-journal discovery so new JSON files cannot corrupt version allocation or recovery.
+
+Generate historical installation pages from their own records; latest IMPORT.md remains the latest-per-module view. Pin full guides, API, examples and translations to retained immutable documentation identities, independently of later destination availability. Do not republish an artifact to add a locale or fix prose. Rebuild all cataloged versions after successful confirmation, including JitPack, while preserving manual documentation-only retry and existing environment delays/locks. Verify same-revision translation fallback, exact dependency pins and optional-model prerequisites; navigation must not suggest that same-artifact JitPack module dependencies can be installed together.
 
 8. FINALIZE WITHOUT LOSING PROVENANCE OR CONCURRENT WORK
 
