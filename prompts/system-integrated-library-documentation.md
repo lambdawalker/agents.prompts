@@ -13,6 +13,7 @@ Act as a senior system architect and documentation engineer. Build or improve do
 - Branch review: [target branches only / review additional named branches / review all design branches]
 - Branch consolidation: [review only / consolidate explicitly named branches]
 - Release automation: [audit and document / implement integration]
+- Canonical language and requested locales: [PER_REPOSITORY; preserve existing choices and follow standalone defaults for new multilingual sites]
 
 Default to target branches only, review-only consolidation, and auditing existing release automation. Missing access to another repository does not authorize inventing its contents or silently duplicating its architecture. Complete accessible work, document blocked reciprocal changes, and provide exact proposed changes for the inaccessible repository. Do not publish packages or deploy applications just to validate documentation.
 
@@ -91,6 +92,14 @@ Document supported combinations of library versions, service/schema versions, an
 A contract change must identify affected repositories and their required docs/tests. Update central specifications, local integration guides, navigation, and compatibility status together where authorized. Cross-repository commits are not atomic: use coordinated PRs or an explicit transition status with links and deploy compatible documentation in a recorded order. Keep old valid links or redirects during migration.
 
 Each publishing repository owns IMPORT.md and its confirmed release metadata. The central site links to or deterministically consumes that reference at a recorded ref; it does not independently allocate versions. Central documentation deployment must not trigger package publication. Preserve the existing 15-minute delayed confirmation and 40-minute polling policy where applicable; use the Android publishing supplement for its implementation.
+
+## Versioned and multilingual system navigation
+
+Apply [Versioned and multilingual documentation](versioned-multilingual-documentation.md), required by the standalone workflow, to each owning library. Keep its release catalog and translations local; do not introduce another docs repository solely for these features. The existing central architecture repository retains its system-level role.
+
+Version central architecture by its own recorded revisions or system releases, not by an invented shared library version. Its compatibility catalog should identify evidenced combinations of library/service/schema versions and architecture revisions. Historical integration pages link to exact library documentation and installation snapshots, not moving latest IMPORT.md. Keep a latest-installation link separately labeled when useful.
+
+Cross-repository navigation must preserve or explicitly explain changes of language, release scope and owner. Missing translations should use the canonical language for that same recorded revision; never hide a jump to newer architecture or API. Coordinate translated terminology and stable flow IDs without creating independently maintained copies of contracts. Validate both sides of these links, including language/version catalogs and fallback notices. Do not claim an inaccessible repository was translated or deployed.
 
 ## Screenshots and validation
 
@@ -178,7 +187,7 @@ For Android/Maven Central automation, follow the companion Android library publi
 
 Replace duplicated current-version installation instructions in READMEs, websites, agent guides, and cross-repository docs with links to the authoritative reference. Preserve intentional historical/migration version references and local-project sample dependencies. Current-source API documentation must not imply that unreleased APIs are available in the latest published artifact.
 
-Contributor instructions should explain the version source, template, renderer, release workflow, and failure recovery. Agent guidance must explicitly require reading IMPORT.md for dependency coordinates and released-version questions rather than guessing.
+Contributor instructions should explain the version source, template, renderer, release workflow, and failure recovery. Agent guidance must require reading IMPORT.md for latest confirmed coordinates, or the selected module/version archive for historical coordinates, rather than guessing. Historical pages must not silently install the latest package.
 
 Audit/document mode records missing automation and proposed changes without claiming they exist. Implementation mode includes the build/template/workflow changes needed for this model; it does not authorize an actual package release.
 
