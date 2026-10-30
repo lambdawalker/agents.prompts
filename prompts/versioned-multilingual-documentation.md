@@ -54,6 +54,10 @@ For corrections, retain the original code SHA and separately record the correcte
 
 ## Module, version and language navigation
 
+The documentation root must open the latest confirmed stable release for its primary module, not Development. Compute latest using confirmed metadata and the ecosystem's semantic version/channel rules, independently per module. Keep Development explicitly available. If no stable release is confirmed, clearly identify the available prerelease or development scope and state that limitation. Provide a fallback link when automatic entry navigation is unavailable.
+
+Keep the landing page and versioned guides in one coherent information architecture. Retain familiar groups, labels, and ordering across release and Development views wherever those topics apply; switching back must restore the correct menu and selected state. Guide contents need not be identical across versions. Distinguish shared current project resources from historical consumer contracts. Missing topics must fall back understandably or be marked unavailable; any link to Development or another module/version must disclose that destination. Never preserve an identical-looking menu by silently presenting the wrong API version.
+
 Provide accessible module, version and language controls when those dimensions exist. A single-module project needs no artificial module selector. Resolve latest independently per module; do not imply that independently released libraries share one version number. Keep development pages visibly separate from confirmed releases in HTML, raw Markdown and search results.
 
 A suitable route pattern is /<language>/<module>/<version>/<guide>/, with equivalent version-scoped raw Markdown. Preserve existing URLs or provide valid redirects. Keep dots and other legal version characters intact: configure explicit slugs if the framework normalizes them. Retain stable heading anchors or correctly map translated anchors.
@@ -91,6 +95,7 @@ Use focused tests and actual generated output to verify:
 - Semantic version ordering, independent module streams, exact consumer coordinates, dependency repositories and pins.
 - Old guide content remains pinned after current guides change; missing objects fail; recorded identities survive the intended merge strategy.
 - Missing/stale translations fall back visibly to the correct canonical snapshot; fresh translations preserve code and contract meaning.
+- Root entry opens the latest confirmed stable release, no-release behavior is honest, and release → Development → release restores coherent navigation. Missing-topic fallbacks and shared resources disclose their scope.
 - Every advertised module/version/language choice resolves, including dropdown option values, catalog/sidebar links, deep links, language alternatives and raw Markdown anchors.
 - Clean site assembly retains all cataloged versions without leftovers from prior builds; project-subpath and dotted-version routes work.
 - Quickstart dependencies match its imports; optional bundles and same-artifact conflicts are explicit.

@@ -5,7 +5,20 @@ Reusable prompts for AI coding agents. Choose one of the two primary documentati
 | Primary prompt | Use it for |
 | --- | --- |
 | [Standalone library documentation](prompts/standalone-library-documentation.md) | An independent library: complete human HTML site, dedicated agent Markdown, runnable demos, API guidance, reproducible screenshots, versioned English/Spanish guides with explicit fallback, and validation/deployment structure. |
-| [System-integrated library documentation](prompts/system-integrated-library-documentation.md) | Libraries within a multi-repository system: all local documentation requirements plus a central architecture repository with its own human site and agent docs, shared UI references, and reciprocal navigation. |
+| [System-integrated library documentation](prompts/system-integrated-library-documentation.md) | Libraries within a larger project or multi-repository system: local documentation plus parent architecture, shared UI references where applicable, and reciprocal navigation. Reuse the established parent site/repository. |
+
+## Library sections
+
+Choose a library section and pair it with the appropriate primary workflow. Every section supports both an independent library and a library that belongs to a larger project, including modules in a monorepo.
+
+| Library section | Standalone | Part of a larger project |
+| --- | --- | --- |
+| [Android libraries](prompts/libraries/android.md) | Standalone workflow + Android rules | System-integrated workflow + Android rules |
+| [Kotlin libraries](prompts/libraries/kotlin.md) | Standalone workflow + Kotlin rules | System-integrated workflow + Kotlin rules |
+| [Go + AWS libraries](prompts/libraries/go-aws.md) | Standalone workflow + Go/AWS rules | System-integrated workflow + Go/AWS rules |
+| [Python libraries](prompts/libraries/python.md) | Standalone workflow + Python rules | System-integrated workflow + Python rules |
+
+[Shared library rules](prompts/libraries/shared.md) apply to all four sections: latest confirmed stable release on entry, coherent navigation across versions, useful reviewed screenshots, and pushed branches with pull requests by default. Version-specific content may differ. Android UI libraries must also have a screenshot test suite and previews for every library/demo composable.
 
 ## Specialist supplements
 
@@ -20,9 +33,9 @@ The former [Multi-repository documentation](prompts/multi-repository-documentati
 
 ## Usage
 
-1. Open the primary prompt and give it to the agent with repository URLs, target branches, and delivery instructions. Include the shared versioned/multilingual supplement when linked prompts cannot be retrieved.
-2. For system-integrated libraries, include the central architecture repository and known related repositories/sites. The prompt explicitly loads the standalone workflow as its shared site, demo, screenshot, and agent-documentation requirements; provide both primary files and the shared versioned/multilingual supplement if the agent cannot access this repository.
-3. Specify local changes, pull requests, or commits to target branches. Branch consolidation and actual package publication require their own explicit scope.
+1. Open the primary prompt and the matching library section, and give them to the agent with repository URLs and target branches. Include the shared library and versioned/multilingual supplements when linked prompts cannot be retrieved. Read each shared dependency once.
+2. For libraries within a larger project, include the parent project or monorepo and, where one exists, the central architecture repository and related repositories/sites. The prompt explicitly loads the standalone workflow as its shared site, demo, screenshot, and agent-documentation requirements; provide both primary files and the shared versioned/multilingual supplement if the agent cannot access this repository.
+3. By default, implement the requested changes on a branch, push it, and open or update a pull request. Honor explicit local-only or other delivery instructions. Do not stop at a local commit or request routine confirmation to push the task branch. Merging, branch deletion, package publication, and production deployment require their own authorization.
 4. Supply canonical/target languages and any release-history constraints. Preserve existing locales; new multilingual sites default to English and Spanish unless you specify otherwise. The primary workflow loads the shared versioning/translation policy.
 5. Use specialist supplements for deeper audits or authorized publishing-tooling work.
 
@@ -32,7 +45,7 @@ The prompts are task text for target repositories, not instructions to execute m
 
 | Information | Authoritative home |
 | --- | --- |
-| General system architecture, shared flows, decisions, UI specifications | Central architecture repository, rendered on its human site and exposed as agent Markdown |
+| General system architecture, shared flows, decisions, UI specifications | Parent architecture location (central repository or monorepo), rendered on the established human site and exposed as agent Markdown |
 | Library API, installation, local behavior, demos, build and operational guidance | Owning library repository, human site, and agent Markdown |
 | Latest confirmed published versions and coordinates | Publishing repository's IMPORT.md or established equivalent |
 | Exact historical installation facts and documentation scope | Owning library's confirmed release catalog and immutable documentation snapshots |

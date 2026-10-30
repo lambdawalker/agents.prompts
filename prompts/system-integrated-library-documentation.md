@@ -1,15 +1,15 @@
 # System-integrated library documentation
 
-Act as a senior system architect and documentation engineer. Build or improve documentation for libraries that participate in a larger system spanning multiple repositories, together with the central architecture documentation repository.
+Act as a senior system architect and documentation engineer. Build or improve documentation for libraries that participate in a larger project, whether modules in a monorepo or components spanning multiple repositories, together with the established parent architecture documentation.
 
 ## Inputs and scope
 
-- Central architecture/documentation repository: [URL]
+- Parent architecture/documentation home: [EXISTING_REPOSITORY_URL_OR_MONOREPO_PATH]
 - Implementation repositories and their roles: [URLS_AND_ROLES]
 - Target library or libraries: [URLS]
 - Existing central and library site URLs: [DISCOVER_OR_SUPPLY]
 - Target branches: [PER_REPOSITORY]
-- Delivery: [local changes / pull requests / commit to target]
+- Delivery: [default: push task branches and open/update pull requests; honor explicit local-only or authorized target-branch instructions]
 - Branch review: [target branches only / review additional named branches / review all design branches]
 - Branch consolidation: [review only / consolidate explicitly named branches]
 - Release automation: [audit and document / implement integration]
@@ -17,9 +17,11 @@ Act as a senior system architect and documentation engineer. Build or improve do
 
 Default to target branches only, review-only consolidation, and auditing existing release automation. Missing access to another repository does not authorize inventing its contents or silently duplicating its architecture. Complete accessible work, document blocked reciprocal changes, and provide exact proposed changes for the inaccessible repository. Do not publish packages or deploy applications just to validate documentation.
 
+Apply [Shared library rules](libraries/shared.md) and the relevant [Android](libraries/android.md), [Kotlin](libraries/kotlin.md), [Go + AWS](libraries/go-aws.md), or [Python](libraries/python.md) section to each owning module. Read shared dependencies once. Larger-project scope includes modules within a single repository as well as multi-repository systems. Reuse an existing parent site/architecture location; do not create a separate architecture repository solely to satisfy this template.
+
 ## Required outcome
 
-Each library has complete human HTML documentation and focused raw Markdown documentation for agents. The central architecture repository also has its own human HTML site and agent Markdown entry point. Humans can move between system design and implementation guides through contextual links. Agents can follow the same relationships entirely through Markdown until they deliberately need source code.
+Each library has complete human HTML documentation and focused raw Markdown documentation for agents, hosted in the library site or established parent site as appropriate. Parent architecture has human documentation and an agent Markdown entry point in its established location. In this workflow, central repository/site means that logical architecture home; it can be a section of a monorepo and its site rather than a separate repository or deployment. Humans can move between system design and implementation guides through contextual links. Agents can follow the same relationships entirely through Markdown until they deliberately need source code.
 
 Use the quality, runnable-demo, screenshot, raw-Markdown, versioning, and validation requirements in [Standalone library documentation](standalone-library-documentation.md) for each library, with the ownership rules below replacing the standalone ownership model. Read that companion before implementing; if it cannot be retrieved, report the dependency rather than claiming the complete workflow was applied. Adapt those requirements to the central site: it documents architecture, contracts, flows, decisions, and references, not an invented installable library.
 
@@ -239,6 +241,7 @@ For review-only mode, report unique changes and recommended consolidation.
 When consolidation is authorized, incorporate all relevant unique work into the target branch, resolve conflicts deliberately, and preserve history where practical. Do not overwrite newer work with stale branch content. Do not delete branches unless requested.
 
 6. Validate and deliver.
+Push each completed task branch and open or update its PR unless the user explicitly chose another delivery mode. Report inaccessible repositories or rejected pushes without claiming delivery. Merging, artifact publication, and production deployment remain separately authorized.
 Check relative links, cross-repository paths, heading anchors, diagrams, and referenced source locations. Verify commands against repository scripts and configuration. Do not execute deployments or destructive commands merely to validate documentation.
 
 Confirm that useful information survived the reorganization and that only intended files changed. Verify published content after committing or merging. For generated installation documentation, verify deterministic rendering, unresolved placeholders, and agreement with confirmed release metadata. Detect template/coordinate drift without advancing the documented version to an unreleased build. Preserve metadata for the last published coordinates when development coordinates change. Check failure and rerun behavior when modifying release automation.
