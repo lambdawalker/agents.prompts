@@ -19,6 +19,58 @@ Use placeholders for secrets, credentials, account-specific identifiers, private
 
 If infrastructure/deployment tooling exists, document environment selection, state/secrets backend, preview/plan versus apply, DNS/email verification where present, outputs, locks, partial failures, and recovery. Preserve confirmed release metadata independently of deployment status. Do not introduce a deployment wizard or mandate an IaC product for an ordinary library.
 
+## Deployment wizard requirements for deployable Go + AWS projects
+
+Apply this section when the requested project owns AWS infrastructure or deployment orchestration. Use Pulumi with an S3 state backend for new deployment tooling in this scope. An ordinary Go library needs no deployment wizard. A documentation-only task must describe the implemented behavior and report gaps; it does not silently authorize changing infrastructure tooling or running deployments.
+
+### Portable entrypoints and environments
+
+- Provide repository-root `deploy.sh` and `deploy.bat` launchers for the same Go deployment program. Resolve the repository root independently of the caller's working directory, preserve quoted/empty arguments and exit status, and keep platform-specific behavior in the thin launchers.
+- Support first setup, build, preview, deploy, status/health, reconfiguration, and recovery. Build the actual deployable artifacts before preview/apply. Check required tool versions and give actionable prerequisite errors.
+- Ask for the environment first. Offer discovered/saved environments, including dev, qa and prod where configured, and allow validated custom names. Keep configuration, state, outputs, credentials scope and recovery receipts isolated by project/environment. Show account, region, environment, stack, backend and hostnames before any mutation.
+- Support shared infrastructure versus environment backends when the architecture has both; allow shared-only, backend-only and ordered combined deployment. Validate shared outputs before wiring a backend.
+- Where parallel deployments use the same base domain, support a saved configurable prefix with a visible default. Prefix deployment identity/state and application subdomains consistently. An explicitly empty prefix selects the final identity; it must not silently adopt or rename legacy resources. Keep email sender/verification domains unprefixed when reusing an existing SES identity.
+
+### AWS authentication
+
+Use AWS IAM Identity Center (SSO) for interactive deployments. Select and remember the existing AWS CLI profile, check the session, and invoke `aws sso login --profile <profile>` when it expires or is missing. Verify STS account/role and region against the selected target before continuing. Do not repeatedly ask for credentials when the session is valid, solicit long-lived access keys as the normal path, or copy SSO cache credentials into the project's vault. In CI, use OIDC/assumed roles and explicit inputs; never start interactive SSO or rely on a workstation session.
+
+### S3 state and passphrases
+
+- Require an S3-backed Pulumi state location (`s3://bucket/dedicated-prefix`), with distinct project/environment stacks and collision-safe state paths. Explain that Pulumi maintains state objects in the bucket; the operator does not manually edit a single state file.
+- Select an existing bucket or provide a separately identified, explicitly authorized bootstrap flow for a new one. Verify ownership/account, region, versioning, encryption at rest, public-access blocking and required access. Never treat a missing stack as permission to initialize over existing infrastructure.
+- On first setup, capture the passphrase used to encrypt Pulumi configuration secrets with hidden input and confirmation when creating a new one. For an existing stack, unlock with its existing passphrase; do not replace it. Configure Pulumi's passphrase secrets provider and pass secrets through protected environment/file/stdin mechanisms, never command-line values or logs.
+- Distinguish S3 server-side encryption, Pulumi secret encryption and the local credential vault. The Pulumi passphrase does not authenticate to S3 or encrypt every field in state. Protect state access with AWS IAM; do not describe S3 state as containing only public values.
+- Restore authoritative encrypted stack configuration and secrets-provider metadata on a fresh checkout before changing settings. Preserve existing secret values and generated proof/signing keys across reruns. Missing local YAML is not permission to regenerate secrets or rotate keys.
+
+### Encrypted local store and remembered answers
+
+Create an encrypted local secret store on first setup, under a private operator directory such as `~/.attestra/<project>/<environment>/` or the platform configuration directory. Use established authenticated encryption and a password-based KDF with random salt/nonces and a versioned format. Capture/confirm its unlock passphrase without echo; never store that unlock passphrase alongside the vault. Scope vaults explicitly and provide deliberate credential update/rotation and recovery instructions. Do not invent a custom cipher.
+
+Persist deployment secrets such as DNS tokens and, when selected, the Pulumi passphrase only inside this encrypted store. Unlock once per run and reuse in memory; a vault unlock can still be required on subsequent runs. An incorrect passphrase or corrupt vault must fail without overwriting it. Keep plaintext secrets out of Git, nonsecret settings, receipts, exports, logs and artifact uploads. Use private permissions/ACLs and atomic writes.
+
+Save nonsecret answers separately with a versioned schema. After first setup, load them before prompting and skip questions with valid saved answers; ask only for missing/invalid values, explicit reconfiguration, changed targets or necessary secret unlocking. Use precedence: explicit flags, current project/environment settings, compatible imported values, then defaults. Report which configuration source was used. Changing environment must load that environment's values before prompting.
+
+Support an allowlisted export/import workflow when migrating from an existing deployment. Reuse portable values without transferring legacy ownership or leaking secrets. Do not rename encrypted vault files to bypass repository/environment scope; any secret migration needs an explicit compatible decrypt/re-encrypt workflow.
+
+### Preview and five-second deployment confirmation
+
+For an interactive invocation that explicitly selects deploy, complete prerequisite/identity checks, build and a successful Pulumi preview first. Display the exact target and preview summary, then ask:
+
+> Deploy the previewed changes? [Y/n] Continuing in 5 seconds; press n or Ctrl+C to cancel.
+
+Show a visible five-second countdown. Yes or Enter proceeds immediately; no, Escape or Ctrl+C cancels. If the user gives no input for five seconds, proceed with that previewed deployment automatically. Do not restart the timer for each resource or repeat configuration questions. Treat EOF, a closed terminal or an input error as cancellation, not timer expiry. Avoid leaked reader goroutines or buffered input accidentally confirming a later step.
+
+The timer must never turn preview/status/build into deploy, apply an unsuccessful/stale preview, or authorize a changed account/environment/plan. Noninteractive execution requires an explicit deployment flag/approval and complete inputs; it must not use silence or EOF as approval. Teardown, reset, state removal and destructive replacement/deletion require a separate explicit confirmation with no automatic timeout. Document these behaviors, including the default-to-proceed countdown.
+
+### Recovery, DNS and verification
+
+Use Pulumi's state locking and additional operation coordination where shared registry/DNS work requires it. Fail clearly on concurrent/stale locks; never automatically delete locks or steal an active deployment. Preserve durable checkpoints for partial AWS, certificate, DNS, verification and publication work so retries reconcile ownership and resume unfinished work without duplicating resources or rotating secrets.
+
+Where DNS/SES are involved, remember the DNS provider and zone, use least-privilege scoped tokens, detect conflicting records and distinguish externally owned identities/certificates from managed resources. Explain staged deployment and readiness waits. Do not publish an endpoint as ready before required DNS/TLS and bootstrap work completes. Preserve shared email identity/DNS ownership before retiring legacy infrastructure.
+
+Export useful nonsecret URLs/client configuration and provide health checks plus a live acceptance checklist. Document backup/recovery of state, vault and passphrases, and the exact rerun command after interruption. Verify launcher behavior, environment isolation, saved-answer precedence, secret handling, expired SSO, state restoration, partial retries, and confirmation yes/no/timeout/EOF/cancellation with fake clocks and mocked cloud calls. Do not run a real deployment merely to test the wizard.
+
 ## Documentation and visuals
 
 Show exact API and infrastructure diagrams where they improve understanding; use real CLI/admin/demo screenshots only where available and useful, with sensitive data removed and provenance recorded. Headless packages need no artificial screenshot suite. Land on the latest confirmed stable module release, keep Development selectable, and retain coherent links between package docs, shared project operations, and parent architecture.
