@@ -10,11 +10,11 @@ INPUTS
 - Module versioning: [independent per module; shared across destinations for each module]
 - Propagation-delay environment: [delayed-docs; owner configures a 15-minute wait timer]
 - Public-artifact polling budget: [40 minutes; finalization job timeout 50 minutes]
-- Version policy: [reuse latest version/original source for unchanged release inputs; otherwise increment the global module patch; define explicit major/minor overrides]
+- Version policy: [one optional version field; blank means first release 0.1.0, reuse latest version/original source for unchanged release inputs, otherwise increment the global module patch]
+- Explicit version override: [stable X.Y.Z newer than the latest global module identity; prereleases require a separately agreed policy]
 - Cross-module release dependencies: [discover stable published pins and their repositories]
 - JitPack polling budget: [30 minutes; job timeout allows setup, build and finalization]
 - Documentation website: [discover existing workflow and GitHub Pages configuration]
-- First release version, if nothing has been published: [explicitly supplied value or ask]
 - Delivery: [local changes / pull request / commit to target branch]
 
 REFERENCE
@@ -61,6 +61,8 @@ Use existing compatible tooling where sound. The reference uses com.vanniktech.m
 
 Supply accurate POM name, description, project URL, license, developer information, and SCM links. Never assume the target project's license from the reference.
 
+For independently released libraries, provide one dedicated manual publishing workflow per library, each fixing its own module internally and calling a shared reusable implementation. Do not ask the user to select the module again inside its dedicated action. Keep histories, reservations, and confirmed metadata separate; finalizing one module must preserve sibling metadata.
+
 For multiple modules, default to independent module versions, with one version/source identity per module shared across destinations. Publish exactly the selected library; enforce selection in Gradle before publication tasks execute. A demo APK may be uploaded as a CI artifact, but must not become a Maven/JitPack publication.
 
 When a module depends on a sibling, build its release against an explicit compatible, already published dependency pin rather than an unpublished project dependency. Validate the pin in its POM and Gradle API/runtime variants and record the dependency's real repository. Development/demo builds may continue to use project dependencies. Verify packaged assets against the selected source; retrieve required Git LFS objects and reject pointer files or mismatched hashes. Keep recordings, screenshots and unrelated large media out of documentation archives.
@@ -69,7 +71,7 @@ When a module depends on a sibling, build its release against an explicit compat
 
 Keep coordinates in one authoritative build configuration and use them for both publication and documentation rendering.
 
-Expose one explicit release version input, such as:
+Expose exactly one optional manual publishing input named `version` (string, default empty). Use a clear description such as: "Optional X.Y.Z. Blank: first release 0.1.0; unchanged inputs reuse latest source/version; changed inputs use next patch." Do not expose separate `initial_version` and `resume_version` fields. Resolve this optional input to a concrete version before invoking Gradle, such as:
 ./gradlew :library:publishAndReleaseToMavenCentral -PreleaseVersion=X.Y.Z
 
 Use the actual task names supported by the selected plugin. Development builds must work without release credentials or a release version. A development snapshot fallback must never silently become a stable Central publication. Validate the explicit version before any remote publication side effect.
@@ -80,12 +82,15 @@ Avoid competing version properties and pre-release source commits that only bump
 
 Fetch full Git history and tags. Maintain a canonical immutable source tag such as MODULE/vX.Y.Z, separate from destination-specific publication state. Order semantic versions numerically, not by tag dates, strings or workflow run numbers. Ignore unrelated tags and explicitly define prerelease handling.
 
+Preserve verified module history across artifact renames according to the repository's migration policy; do not treat renamed coordinates as an entirely new module.
+
 Read history across every enabled and historical destination, including confirmed records and durable reservations. Preserve legacy tags; do not retag old releases or invent source provenance. Reject the same module/version associated with conflicting source SHAs. A source tag alone is not public availability; an artifact alone is not source provenance. Network failures are not empty registries. Existing untracked public versions require deliberate reconciliation; an allocation floor may be bootstrapped from verified public versions without claiming their source or reusing them for cross-destination publication.
 
 For each selected module:
-- If there is no history, use the explicit initial-version policy.
-- If current release inputs match the latest global module identity, reuse that version AND the original tagged source. If the selected destination already confirms that identity, exit successfully without upload, a new tag, or documentation mutation.
-- If release inputs changed on a descendant source, allocate X.Y.(Z+1) from the latest global module identity, even if the selected destination has missed many releases.
+- Blank or whitespace-only, with no history: use 0.1.0 without asking for an initial version. An explicit stable X.Y.Z may override the first version.
+- Explicit stable X.Y.Z with existing history: allocate a new identity only when strictly newer than the latest global module identity. Reject malformed versions, unsupported prereleases/snapshots, reused explicit versions, and downgrades before reservation or upload; never bypass provenance or unresolved-attempt guards. Blank input alone selects the safe reuse/catch-up behavior below.
+- With blank input, if current release inputs match the latest global module identity, reuse that version AND the original tagged source. If the selected destination already confirms that identity, exit successfully without upload, a new tag, or documentation mutation.
+- With blank input, if release inputs changed on a descendant source, allocate X.Y.(Z+1) from the latest global module identity, even if the selected destination has missed many releases. Increment only the patch component: 0.1.9 becomes 0.1.10, not 0.2.0.
 - Reject an older checkout, an older explicit version, or reuse of an existing version for changed inputs. An explicit new major/minor/patch version must exceed the latest identity.
 - A destination catching up must never build current HEAD under an old tag. Reused source must contain the needed publication protocol; otherwise require a new version instead of mutating historical source.
 
@@ -101,7 +106,7 @@ Use per-destination confirmed records and pending journals, each keyed by module
 
 4. BUILD A CONTROLLED WORKFLOW
 
-Provide a clearly named workflow_dispatch entry point per publishable module, with a generated repository selector and optional version override. Ordinary releases should not require guessing a patch number. Shared workflow_call implementations are called by these entry points; document that they do not themselves display a Run workflow button. Provide a separate manual finalizer taking destination, module and version.
+Provide a clearly named workflow_dispatch entry point per publishable module, with a generated repository selector and exactly one optional `version` field. Do not expose `initial_version` or `resume_version`. Ordinary releases use the configured destination and leave `version` blank; no patch number needs to be guessed. Explicit versions request a new identity, never recovery. Keep recovery exclusively in the separate finalization action. Shared workflow_call implementations are called by these entry points; document that they do not themselves display a Run workflow button. Provide a separate manual finalizer taking destination, module and version.
 
 For Central, split the workflow into publish, propagation-delay, and finalize. JitPack uses local validation, source-tag reservation, remote build/public verification, and finalization, with no Central delay or signing secrets. Provide a separate finalization workflow with both workflow_call and workflow_dispatch entry points; automatic and manual confirmation must use the same implementation.
 
@@ -148,7 +153,7 @@ Separate plugin completion from public registry propagation:
 - Propagation-delay job: after successful ordinary publication, reference the secret-free delayed-docs environment with a 15-minute wait timer. The wait is configured in GitHub Settings, not by YAML timeout-minutes. GitHub waits before assigning a runner; use only a short no-op step after the gate opens. Do not substitute a runner sleep or hold the release concurrency lock during this gate.
 - Finalization job: after the gate, call the shared finalization workflow with the reserved version and expected source. Poll public Maven endpoints for up to 2400 seconds (40 minutes), exiting early when complete. Allow a 50-minute execution timeout for setup and final Git operations. This provides roughly 15 + 40 = 55 minutes for propagation after plugin completion, plus queue/setup time; it is not a guaranteed end-to-end duration.
 
-The manual finalization entry point takes an existing version, bypasses the delay, and never builds, allocates, reserves, or uploads artifacts. It must work without Maven/signing secrets. A retained resume_version input should use this same finalizer and skip the delay. Handle skipped dependency jobs explicitly in the automatic finalize condition without allowing failed or cancelled publication to trigger ordinary automatic finalization. Unknown upload outcomes require deliberate manual recovery.
+The manual finalization entry point takes an existing version, bypasses the delay, and never builds, allocates, reserves, or uploads artifacts. It must work without Maven/signing secrets. Do not route an existing version entered in the publishing form to recovery; reject explicit version reuse and direct the maintainer to the Finalize action. Handle skipped dependency jobs explicitly in the automatic finalize condition without allowing failed or cancelled publication to trigger ordinary automatic finalization. Unknown upload outcomes require deliberate manual recovery.
 
 After obtaining the mutation lock, fetch remote state again and resolve the requested version from durable records. Validate the expected source when supplied by the publishing job. Reject unknown versions, conflicting tags, inconsistent marker records, or source mismatches. If the same release has already been finalized by the other path, exit successfully without polling, committing, or writing tags. An older completed release must also be a no-op and must never overwrite newer installation metadata, including while a later release is pending. Determine completion from consistent provenance records, not merely the presence of a tag.
 
@@ -242,7 +247,11 @@ Keep a selected-module CI matrix and a local verification repository. Test Centr
 
 Test helpers with fixtures, mocked registry responses, and temporary Git repositories. Include:
 - Semantic ordering such as 0.1.9 versus 0.1.10.
-- Initial release and no-tags bootstrap.
+- Blank and whitespace-only first-release input selecting 0.1.0; explicit first-version overrides; no-tags bootstrap.
+- Blank subsequent input reusing the original version/source for unchanged inputs (or no-op when confirmed), incrementing the latest global patch for changed inputs, and explicit higher patch/minor/major overrides.
+- Reused/older versions and invalid overrides rejected without bypassing provenance or pending-attempt checks.
+- Exactly one optional `version` input on each manual publishing form, forwarded correctly to the shared implementation; recovery only through the dedicated finalizer.
+- Independent module histories and preservation of sibling metadata when applicable.
 - Divergent tags and Central history.
 - Invalid versions and unresolved pending attempts.
 - Recovery resolving the original source and skipping upload.
@@ -258,7 +267,7 @@ Test helpers with fixtures, mocked registry responses, and temporary Git reposit
 - Unknown versions, expected-source mismatches, conflicting tags, and inconsistent markers.
 - Polling success before the deadline, transient failures, timeout, partial artifacts, and hash mismatches.
 - Identical job-level lock keys across publishing and both finalization paths, with the delay outside the lock and no caller/callee lock nesting.
-- Ordinary automatic completion, skipped-delay recovery, and failed/cancelled publication dependency conditions.
+- Ordinary automatic completion, manual finalization bypassing the delay, and failed/cancelled publication dependency conditions.
 
 Run relevant Gradle checks and validate workflow YAML, expressions, shell scripts, and permissions as practical. Keep credentials out of ordinary CI. Report checks that cannot run in the available environment.
 
@@ -272,6 +281,6 @@ Provide the working workflows, canonical destination registry and generated drop
 
 Include a destination-specific owner setup checklist. Public JitPack needs no access token, custom endpoint or signing key; explain any empty GitHub environment and optional protections. Only when Central is enabled: create maven-central with the four documented secret names; create delayed-docs with a 15-minute wait timer, no secrets, and no required reviewers if automatic continuation is intended; allow the release branch where deployment restrictions apply. Verify current GitHub plan/repository-visibility support for wait timers and report limitations. Merely referencing an environment does not configure its timer. Document existing bot contents/tag permissions and branch-protection requirements without requesting bypass tokens. Explicitly distinguish owner setup that remains unverified from settings actually inspected.
 
-The runbook must explain first-time setup, ordinary release, version policy, exact source selection, artifact set, publication success criteria, installation generation, protected-branch handling, site updates, and failure recovery.
+The runbook must show the single optional version field alongside the destination selector, blank-input first/subsequent examples including unchanged-source catch-up/no-op and changed-input patch allocation, explicit-version overrides, and the separate recovery action. It must explain first-time setup, ordinary release, version policy, exact source selection, artifact set, publication success criteria, installation generation, protected-branch handling, site updates, and failure recovery.
 
 Finish with a concise report listing changes, validation results, required GitHub/destination setup, actual verified publication/build evidence, limitations, and commit or PR links. State explicitly that no real release was performed unless separately authorized and actually completed.
