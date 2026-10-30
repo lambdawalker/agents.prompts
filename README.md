@@ -26,7 +26,7 @@ Choose a library section and pair it with the appropriate primary workflow. Ever
 | --- | --- |
 | [Versioned and multilingual documentation](prompts/versioned-multilingual-documentation.md) | Shared policy used by the primary workflows: preserved release guides and installation history, module/version/language navigation, translation freshness, and durable rebuilds. |
 | [AI-agent documentation](prompts/ai-agent-documentation.md) | A deeper API-contract, lifecycle, ownership, troubleshooting, and agent-evaluation audit. |
-| [Android library publishing](prompts/android-library-publishing.md) | Maven Central and JitPack publication, independent module versions shared across destinations, recoverable releases, latest-available IMPORT.md, and automatic documentation deployment. |
+| [Android library publishing](prompts/android-library-publishing.md) | Maven Central and JitPack publication, Python GitHub-token environment setup wizard, independent module versions shared across destinations, recoverable releases, latest-available IMPORT.md, and automatic documentation deployment. |
 | [Python package publishing](prompts/python-package-publishing.md) | Release Please version/changelog PRs, validated wheel and sdist builds, PyPI Trusted Publishing, and recovery/setup guidance. |
 
 The former [Multi-repository documentation](prompts/multi-repository-documentation.md) entry redirects to the system-integrated workflow. Its ownership, branch consolidation, and release safeguards have been retained there.
@@ -40,6 +40,20 @@ The former [Multi-repository documentation](prompts/multi-repository-documentati
 5. Use specialist supplements for deeper audits or authorized publishing-tooling work.
 
 The prompts are task text for target repositories, not instructions to execute merely because an agent reads this collection.
+
+### Ask an agent to add Android publishing
+
+Give the agent this repository and a target library URL, for example:
+
+```text
+Apply prompts/libraries/android.md and prompts/android-library-publishing.md from
+https://github.com/lambdawalker/agents.prompts to [TARGET_REPOSITORY_URL].
+Use https://github.com/lambdawalker/android.apexfission.carddetector as the reference.
+Add Maven Central and public JitPack publishing for the intended library modules,
+including a Python script that asks for a GitHub token and configures all required
+deployment environments. Preserve the target toolchain and existing protections.
+Test without publishing, push a task branch and open a PR. Do not run a real release.
+```
 
 ## Documentation ownership
 
