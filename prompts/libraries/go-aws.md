@@ -75,6 +75,43 @@ Include GitHub deployment configuration in the deployment wizard, so the same pr
 - Have Actions call the same Go deployment program and configuration schema as local launchers, using explicit noninteractive flags and approval. Use OIDC, minimal workflow permissions, appropriate concurrency groups for shared/identity locks, and environment protection rules. The local five-second interactive countdown must not run in CI. Fail early on absent required variables/secrets; do not substitute first-run defaults for omitted saved settings.
 - Provide first-run and rerun instructions, the workflow/environment links, required variables/secret names, and a setup summary listing completed/skipped/incomplete components. Verify workflow syntax, scope/environment routing, shared-first ordering, concurrency and credential handling without triggering an actual deployment merely to validate setup. Configuring Actions does not itself authorize dispatching a deployment.
 
+### Avoid repeated work with fingerprints and reconciliation
+
+Make repeat runs fast and idempotent. Inspect existing resources before creating them, reconcile only managed differences, reuse verified build artifacts, and parallelize independent work. A fingerprint is a change detector and cache key, not proof of ownership or remote readiness.
+
+#### Fingerprint format and success records
+
+- Use SHA-256 over a versioned canonical manifest: sorted field/file names, explicit field boundaries, stable encoding and normalized representations. Prefer canonical JSON or length-delimited records over naive string concatenation, which can collide structurally. Hash actual content, including uncommitted changes; a Git commit ID or modification time alone is insufficient.
+- Scope manifests and completion records by repository/project, component, environment, account, region, deployment identity and target architecture as applicable. Include the fingerprint schema and relevant generator/tool versions so behavior changes invalidate old records.
+- Keep separate desired-input, artifact-content and successfully-applied fingerprints. Write completion markers atomically only after the corresponding operation and verification succeed. A failed, cancelled or partial operation must not mark the entire target complete. Missing/corrupt records or artifacts are cache misses; provide explicit force-rebuild, force-reconcile and cache-clean controls.
+- Never put secret plaintext or ordinary hashes of secret values into public manifests, GitHub variables, logs or resource tags. Low-entropy secrets can be guessed from a plain hash. Use nonsecret secret-version/rotation identifiers, or a private keyed digest inside the encrypted store where needed. Secret names alone detect inventory changes, not changed values or successful secret delivery.
+
+#### GitHub environment reconciliation
+
+Before creating a GitHub environment, query whether it already exists and inspect the configuration the wizard owns. Compute its desired fingerprint from a canonical manifest of repository/environment identity, component mapping, managed nonsecret variable names and values, required secret names and rotation identifiers, OIDC role/trust references, deployment restrictions/protection settings and applicable workflow content or version. Respect independently managed settings.
+
+Store a versioned marker such as `DEPLOY_CONFIG_SHA256` as an environment variable, excluded from its own hash. If the marker matches and readable managed fields, required secret-name inventory and referenced setup still match, skip environment creation and unnecessary update calls. If the marker differs, compute and apply the managed delta; do not recreate the environment or overwrite unrelated settings. Adopt an existing compatible environment through reconciliation rather than assuming it belongs to the wizard.
+
+A matching marker must not hide deleted variables, changed protections, missing secrets or external drift. Readable fields must still be checked. GitHub secret values cannot be read back: retain honest delivery/rotation receipts, support explicit rotation, and never claim that a secret value was verified merely because its name or marker exists. Permission/API failures are unknown state, not a cache hit. Write the marker last, after all required changes and checks succeed; partial setup remains resumable. Serialize concurrent writers to the same environment and recheck before publishing completion.
+
+#### Lambda and Go build caching
+
+Maintain a per-build-target local cache manifest and reusable artifact, rather than rebuilding every Lambda on each deploy. The build-input fingerprint must cover relevant source and transitive local dependency content, embedded assets, generated inputs, dependency/module metadata and replacements, Go/toolchain version, GOOS/GOARCH, build tags, compiler/linker flags, relevant build environment and packaging recipe. Exclude generated outputs, cache directories and irrelevant timestamps from source discovery. Do not reuse an artifact across incompatible toolchains or architectures.
+
+If the input fingerprint matches and the cached binary/archive exists with its recorded SHA-256, reuse it. Otherwise rebuild that target, package it deterministically, verify it and atomically record the new input/artifact fingerprints. Shared entrypoints with identical build inputs may reuse one compiled binary for multiple deployment names; keep function-specific configuration distinct. Reuse Go's own build/module cache as well.
+
+For remote Lambda updates, compare the actual deployment-package digest using AWS/Pulumi's supported code-hash semantics. Distinguish an input hash from the ZIP-byte hash AWS reports. Let Pulumi own resource changes; supply stable artifact hashes rather than bypassing its state with ad hoc update calls. Unchanged code can skip rebuild/upload while changed configuration, IAM, layers, environment variables or infrastructure still receive their own preview/reconciliation.
+
+Apply the same principle to other resources where useful: compare desired managed configuration with authoritative state, preserve ownership, and reconcile drift through the IaC provider. Never skip the entire Pulumi plan/refresh or required remote verification solely because a local hash, resource tag or previous success marker matches. A resource may have changed or disappeared outside the wizard.
+
+#### Bounded parallel work
+
+Represent deployment work as a dependency graph. Build independent Lambda targets and perform independent read-only prerequisite checks concurrently with a configurable worker limit based on available CPU/memory. Avoid oversubscribing Go compilation, exhausting memory, or exceeding API rate limits; use bounded retries/backoff for throttled calls.
+
+Keep shared-resource prerequisites, dependent backend setup, same-stack Pulumi updates, and writes to the same environment/state/receipt serialized. Use operation locks and atomic per-target cache publication so parallel runs cannot consume half-built artifacts or mark another target complete. On failure/cancellation, stop dependent work, clean temporary outputs and preserve successful independent cache entries. Keep logs attributable to targets and print a deterministic summary of reused, rebuilt, unchanged, updated, failed and skipped work.
+
+Test unchanged reruns, source/dependency/toolchain changes, missing/tampered artifacts, remote drift, changed secret inventory/rotation, interrupted updates, concurrent writers, and serial-versus-parallel result equivalence. Verify that unchanged reruns avoid unnecessary creation, compilation and upload while still detecting real changes.
+
 ### Recovery, DNS and verification
 
 Use Pulumi's state locking and additional operation coordination where shared registry/DNS work requires it. Fail clearly on concurrent/stale locks; never automatically delete locks or steal an active deployment. Preserve durable checkpoints for partial AWS, certificate, DNS, verification and publication work so retries reconcile ownership and resume unfinished work without duplicating resources or rotating secrets.
