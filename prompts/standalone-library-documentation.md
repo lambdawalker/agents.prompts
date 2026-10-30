@@ -7,6 +7,9 @@ Existing documentation URL, if any: <OPTIONAL_URL>
 Canonical language and target locales: preserve existing choices; default to English and Spanish for a new multilingual site unless the user specifies otherwise.
 Release-history scope: discover confirmed releases and state the initial archive boundary.
 Hosting: preserve the existing provider; default to GitHub Pages for GitHub repositories without an established provider.
+Delivery: push a task branch and open or update a pull request unless the user explicitly requests local-only or another delivery mode.
+
+Apply [Shared library rules](libraries/shared.md) and the matching section: [Android](libraries/android.md), [Kotlin](libraries/kotlin.md), [Go + AWS](libraries/go-aws.md), or [Python](libraries/python.md). Read each shared dependency once. For mixed repositories, apply the relevant sections to their owning modules.
 
 GOAL
 
@@ -63,6 +66,8 @@ Do not substitute a link to GitHub or the agent manual for an essential human ex
 
 Use readable typography, responsive navigation, accessible contrast, keyboard navigation, heading anchors, syntax highlighting, copyable code, and sensible image sizing. Add search when the documentation size warrants it. Respect reduced motion. Test project-subpath URLs rather than assuming deployment at the domain root.
 
+The site root must open the latest confirmed stable release, with Development available explicitly. Keep the landing-page and versioned-guide navigation coherent, retain the selected guide when possible, and label fallbacks/cross-version destinations. Content need not be identical across releases. Keep a useful existing landing design and enrich it with reviewed screenshots that explain the flow rather than adding a detached gallery. Apply the shared rules for release selection, navigation, image provenance, and validation.
+
 4. WRITE DEDICATED AGENT DOCUMENTATION
 
 Keep docs/agents/index.md small. Include the project purpose and non-goals, documentation ref/version, authoritative installation pointer, a task-to-API decision table, critical invariants, and links to focused documents. An agent should be able to choose its next file without reading the whole corpus.
@@ -84,6 +89,8 @@ Compile or execute the relevant demos. Extract site snippets from named regions 
 6. IMPLEMENT REPRODUCIBLE SCREENSHOTS WHEN THEY HELP
 
 For UI projects, capture actual rendered components or runnable demos. For nonvisual libraries, skip screenshots unless a real visualization or demo improves understanding; document that decision. Never manufacture a UI screenshot with image generation or manual redrawing.
+
+For Android UI projects, always generate and maintain the executable screenshot test suite and previews for every library/demo composable described in the [Android section](libraries/android.md). A preview annotation alone is not a screenshot test; headless projects need no invented UI.
 
 Choose the existing platform-appropriate renderer where possible. Android Compose previews can document deterministic library-owned UI. Emulator/device instrumentation is needed for actual system UI and platform interactions. Static preview images do not prove permission dialogs, navigation, camera hardware, lifecycle transitions, or other platform behavior.
 
@@ -135,7 +142,7 @@ Before completion:
 - Confirm generated assets are reproducible and stale generated files are removed.
 - Confirm CI jobs distinguish validation, intentional image updates, and deployment.
 
-Report checks actually performed, failures, and checks blocked by the environment. Do not claim deployment or visual verification without evidence. Deliver the implemented structure, a short maintenance guide with exact commands, and any precise hosting setup the owner must complete. Follow the user's authorization for committing or publishing; do not make unrelated repository changes.
+Report checks actually performed, failures, and checks blocked by the environment. Do not claim deployment or visual verification without evidence. Deliver the implemented structure, a short maintenance guide with exact commands, and any precise hosting setup the owner must complete. Push the task branch and open or update its PR by default; honor explicit local-only or alternate delivery instructions. Do not merge, publish artifacts, or deploy production without the corresponding authorization. Report any environment or permission blocker accurately. Do not make unrelated repository changes.
 
 SUCCESS CRITERIA
 
