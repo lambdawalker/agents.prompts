@@ -32,6 +32,14 @@ First inspect the actual implementation, tests, examples, build files, CI config
 
 Prefer facts derived from the source code over existing prose when they disagree.
 
+VERSION AND LANGUAGE RETRIEVAL
+
+Use [Versioned and multilingual documentation](versioned-multilingual-documentation.md) for history, translations, provenance and fallback rules. In an audit-only task, identify missing support without silently expanding into a site or release-tooling implementation.
+
+The agent entry and discovery catalog must expose module, release/development scope, canonical language, available locales, immutable source/documentation identity, and exact-version raw Markdown paths. An agent requesting an old dependency must retrieve its matching installation record, APIs, examples and limitations; latest IMPORT.md is only the default for latest-version questions. Keep raw links in the chosen version and language. Explain dependency pins and intentional cross-module transitions.
+
+Preserve one canonical contract source. Translate explanations without changing API names, coordinates or executable examples; record canonical-source hashes and report stale/missing translations. Fallback must be to that selected revision's canonical guide, never the latest translated page. Published translations need durable provenance so later edits do not erase old-language coverage. Add an evaluation task that retrieves an older module version in a requested language, installs from its confirmed destination and handles a missing translation correctly.
+
 DOCUMENTATION ARCHITECTURE
 
 Use the following conceptual separation.
@@ -432,7 +440,7 @@ IMPORT.md should describe the latest successfully published release, actual arti
 For Gradle/Maven, prefer a deterministic generateImportDocs task accepting -PreleaseVersion and drawing coordinates from existing publishing configuration. Include applicable Kotlin DSL, Groovy, version-catalog, and Maven examples in this reference. Adapt the mechanism to other ecosystems; do not duplicate coordinates in unrelated constants or embed large templates in CI YAML.
 
 Add an explicit instruction in existing contributor and consumer-agent entry points:
-“Read IMPORT.md before answering questions about installation, dependency coordinates, or the current released version. Use the values documented there. Do not guess versions, use workflow run numbers, or treat development configuration as evidence of publication. Edit the template and regenerate; do not manually edit the generated reference.”
+“Read IMPORT.md for the latest confirmed installation choices. For an explicitly selected older module/version, read its archived installation record and matching guides instead. Use the values documented there. Do not guess versions, use workflow run numbers, or treat development configuration as evidence of publication. Edit the template and regenerate; do not manually edit the generated reference.”
 
 If the reference is missing, stale, or conflicts with registry/release evidence, report the discrepancy and verify the release before changing it. Do not fabricate a latest version. Unreleased source behavior must be labeled separately from behavior supported by the documented published release.
 

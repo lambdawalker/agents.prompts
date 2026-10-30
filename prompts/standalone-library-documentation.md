@@ -4,6 +4,8 @@ Act as a senior library maintainer, technical writer, and documentation engineer
 
 Target repository: <REPOSITORY_URL_OR_CURRENT_CHECKOUT>
 Existing documentation URL, if any: <OPTIONAL_URL>
+Canonical language and target locales: preserve existing choices; default to English and Spanish for a new multilingual site unless the user specifies otherwise.
+Release-history scope: discover confirmed releases and state the initial archive boundary.
 Hosting: preserve the existing provider; default to GitHub Pages for GitHub repositories without an established provider.
 
 GOAL
@@ -113,7 +115,13 @@ Keep documentation deployment separately retryable from package upload. A site f
 
 Use read-only permissions for validation and isolate deployment permissions to trusted deployment jobs. Do not expose publishing credentials to screenshot rendering or untrusted pull requests. Preserve existing publishing behavior unless a change is necessary and within the requested scope.
 
-8. VERSIONING AND VALIDATION
+8. VERSIONED AND MULTILINGUAL DOCUMENTATION
+
+Read and apply [Versioned and multilingual documentation](versioned-multilingual-documentation.md) as the shared policy for this workflow. Implement complete versioned guides/API/examples and exact-version installation pages, with module-aware version/language navigation, canonical-source translation hashes, and explicit same-version fallback. Preserve one authored source tree; keep documentation in this repository unless another ownership model already exists. A new multilingual site includes English and Spanish by default; honor explicit locale choices. If the supplement is unavailable, report that dependency rather than claiming the full workflow was implemented.
+
+Archive confirmed per-module release facts before latest pointers are overwritten. Render all retained snapshots on every deployment from durable immutable inputs; do not depend on prior deployed files or expiring artifacts. Keep latest IMPORT.md distinct from each historical installation page. Do not translate identifiers or accidentally route a bundled-model example to detector-only installation instructions.
+
+9. VALIDATION
 
 State whether the website and agent guides describe a release or main. Do not present unreleased APIs as supported by the current published dependency. If stable and development docs coexist, make the distinction visible in both HTML and Markdown. Source links, demos, installation facts, screenshots, and API contracts must agree with the stated scope.
 
@@ -131,7 +139,7 @@ Report checks actually performed, failures, and checks blocked by the environmen
 
 SUCCESS CRITERIA
 
-A human can complete an integration from the website; an agent can do the same starting at one Markdown file without parsing HTML. Both obtain the same verified API and version facts. Demos are runnable and linked. Useful screenshots are real, reproducible, reviewed, and traceable. Future maintainers have one clear workflow for keeping all surfaces aligned.
+A human can complete an integration from the website; an agent can do the same starting at one Markdown file without parsing HTML. Both obtain the same verified API and version facts for the selected module and release. Historical guides remain accessible; requested translations cover consumer documentation and navigation, with explicit same-revision fallback when missing or stale. Demos are runnable and linked. Useful screenshots are real, reproducible, reviewed, and traceable. Future maintainers have one clear workflow for keeping all surfaces aligned.
 
 
 ## Companion prompts and scope
