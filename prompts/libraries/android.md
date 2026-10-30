@@ -9,6 +9,14 @@ Use this section with the selected primary documentation workflow and [shared li
 
 Preserve established AGP, Gradle, Kotlin, Compose, JDK, and SDK choices. Check official compatibility requirements before changing tooling; never copy a screenshot plugin/version blindly from another repository. Use the [Android publishing supplement](../android-library-publishing.md) only for the requested publishing scope.
 
+## Maven Central, JitPack and publishing setup
+
+When asked to add deployment/publication scripts for Maven Central or JitPack, load and implement the [Android publishing supplement](../android-library-publishing.md). It covers both standalone libraries and libraries inside a larger application. Implement the release Gradle configuration, manual workflows, immutable release tracking, verification/recovery helpers and runbook; do not stop at a workflow skeleton or a list of secrets. Publish only the intended library release variant, excluding demo applications and internal/mock modules.
+
+Include a cross-platform Python setup script that asks for a masked GitHub token and configures the required GitHub environments, variables and encrypted secrets after a concrete review. Public JitPack's environment is secret-free; Central also needs its propagation-delay environment. Preserve existing values and protection rules. Creating the tooling does not authorize running the wizard against live settings or publishing a package.
+
+Use CardDetector as the implementation reference identified in the supplement, adapting its approach to the target repository rather than copying its license, coordinates, module identifiers or toolchain. The supplement remains authoritative for detailed release, setup and recovery requirements.
+
 ## Always provide composable previews
 
 Every library-owned and demo/sample composable must have preview coverage, including new or changed composables. Place an actual preview beside the component or in a discoverable dedicated preview source set. Parameterized components and composables requiring slots, scopes, callbacks, owners, or injected services must have a preview wrapper with deterministic fixture inputs. A meaningful parent preview can cover a private helper when the coverage mapping records that helper and its visible state; do not pretend that one screen preview demonstrates every state of every component.
