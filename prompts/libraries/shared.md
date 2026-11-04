@@ -46,6 +46,23 @@ Apply these rules whenever a library owns deployment tooling, regardless of impl
 - Secret entry/confirmation and destructive operations require deliberate input without automatic timeout approval. CI/noninteractive runs require explicit complete inputs and applicable approval flags; interactive countdowns never authorize CI work or change a preview/status/build action into deployment.
 - Test defaults, overrides, yes/no/Enter, timeout, cancellation, EOF, saved-answer reuse and interrupted setup with fake clocks/mocked services.
 
+## Deployed artifact ownership, tagging and reports
+
+Apply only to repositories that own deployable infrastructure. Distinguish these roles explicitly:
+
+| Repository role | Responsibility |
+|---|---|
+| Application/aggregator | Compose features and shared services; aggregate their inventories into application/environment reports while preserving each creating feature's ownership. Report host-owned integrations separately. |
+| Feature/library | Inventory and report only resources the feature creates, including its standalone test deployment when present. Declare host-provided dependencies as external; do not deploy or copy an application dashboard, administer host resources, or relabel application/shared resources as feature-owned. Supply safe inventory metadata for host aggregation. |
+
+- Every deployed artifact needs discoverable project/environment ownership and purpose. Add native descriptions where supported and nonsecret tags/labels for project, environment, feature/component, creating repository and manager. Use a domain-derived identity where established; without a domain, use `<project-name>-<environment>` as the human-readable Name. Keep logical identity, physical provider ID and display name distinct; do not rename existing resources merely to add labels.
+- For resources that cannot carry tags/descriptions (such as policy attachments or child configurations), keep exact logical/physical identity, owner, purpose and parent relationships in the managed inventory/report. Never infer ownership from a matching name/tag alone. Preserve unrelated labels and distinguish operator-provided/shared dependencies from owned resources.
+- Produce JSON, Markdown and self-contained HTML from one normalized safe snapshot. Reuse the project's reporting protocol/library rather than inventing a parallel schema or copying an aggregator's implementation. See the [Infra Composer artifact report protocol](https://github.com/lambdawalker/design.infra.composer/blob/main/docs/artifact-reports.md).
+- Feature reports show feature repository, deployment scope, operation/outcome, revision/dirty state, timing, counts, hierarchy, planned actions, physical/logical IDs and evidence age. Application reports add application/shared scope and feature selection, retaining exact creating owners and ancestor context.
+- Generate reports for previews and deployment attempts, including partial failures; provide a report-only command and optional read-only verification. Preserve successful partial observations. State records mean recorded, offline catalogs mean unknown, and only exact scoped live evidence proves present/absent. Failed/unsupported checks mean unknown, never absent or success.
+- Preserve observation timestamps and use scope/identity-checked caches. Store reports privately and atomically under scoped deployment records or ignored `.deploy/reports/`; print their paths. Never expose raw state, provider diagnostics, credentials, policies, environment maps, object contents or arbitrary configuration. Copy only explicitly allowlisted safe output settings and escape HTML/Markdown values.
+- Tag/report changes must cover app-owned and feature-owned resource boundaries in tests: ownership, hierarchy, invalid/failed evidence, cache scope, unchanged labels, secrets omission and partial outcomes. Do not deploy cloud resources merely to validate reports.
+
 ## Deliver branches and pull requests
 
 For requested implementation/documentation work, default to a task branch, push the completed changes, and open or update a pull request. Honor explicit local-only instructions. Do not stop after a local commit or repeatedly ask for routine push permission already covered by the task. Include concrete behavior changes, validation actually run, limitations, and relevant PR links in delivery.
