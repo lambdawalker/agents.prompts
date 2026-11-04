@@ -59,6 +59,8 @@ Support an allowlisted export/import workflow when migrating from an existing de
 
 ### Preview and five-second deployment confirmation
 
+A plain interactive `deploy.sh` or `deploy.bat` invocation defaults to **deploy**: run prerequisites and build, preview successfully, then present the timed apply confirmation below. Do not stop after preview unless the operator explicitly selected preview-only. Keep explicit setup/build/status/preview actions unchanged, and require explicit deploy intent plus approval flags in CI/noninteractive mode.
+
 For an interactive invocation that explicitly selects deploy, complete prerequisite/identity checks, build and a successful Pulumi preview first. Display the exact target and preview summary, then ask:
 
 > Deploy the previewed changes? [Y/n] Continuing in 5 seconds; press n or Ctrl+C to cancel.

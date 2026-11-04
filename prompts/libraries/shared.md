@@ -34,6 +34,8 @@ Nonvisual libraries do not need a fabricated UI or screenshot suite. Use real de
 
 ## Deployment questions, defaults and countdowns
 
+- A plain interactive deployment-script invocation must default to **deploy**, not preview-only: complete prerequisites/build, produce a successful preview/plan, then offer the standard five-second deployment confirmation and apply the previewed changes. Provide an explicit preview-only action. Explicit build/status/setup/preview actions must never escalate to deployment. Noninteractive/CI execution still requires explicit deployment intent and approval; silence, EOF or an omitted action must not authorize CI deployment.
+
 Apply these rules whenever a library owns deployment tooling, regardless of implementation language.
 
 - Discover values from authenticated services and load valid saved answers before asking. Skip questions already answered by explicit flags or valid scoped settings. When a question is necessary, always provide a validated, sensible default where one is available; show the default and its consequence in plain language.
