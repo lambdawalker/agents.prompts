@@ -27,11 +27,19 @@ Apply this section when the requested project owns AWS infrastructure or deploym
 
 Follow the [shared deployment question rules](shared.md#deployment-questions-defaults-and-countdowns) for every deployment question. Prefer authenticated discovery and saved settings over repeated prompts. Every question with a valid nonsecret default displays that default, its consequence and a visible five-second countdown; Enter accepts it immediately and timeout selects it. Required text without a valid default, secret entry and destructive confirmations remain explicit.
 
+### Persistent projects and console presentation
+
+Follow the shared [deployment project identity and persistent records](shared.md#deployment-project-identity-and-persistent-records) and [console wizard presentation](shared.md#console-deployment-wizard-presentation) rules. Ask for project identity first on initial setup; keep central records under `~/.infra-composer/<project_name>/` and the encrypted vault/local configuration under ignored repository-root `.deploy/`. Preserve project/environment/account/region isolation and existing secret values when migrating older layouts.
+
+Use successful remote Pulumi stack discovery to select existing state or automatically initialize genuinely absent state during setup/preview/deploy. A local flag alone is not proof of existence or absence; lookup failures and lost initialized stacks stop for recovery. Keep preview/status/build distinct from apply and retain explicit CI inputs.
+
+Use labeled steps and aligned target summaries. Render the five-second countdown on one line in terminals, with clean completion/cancellation and plain redirected output. Respect `NO_COLOR`, terminal capabilities and Windows compatibility.
+
 ### Portable entrypoints and environments
 
 - Provide repository-root `deploy.sh` and `deploy.bat` launchers for the same Go deployment program. Resolve the repository root independently of the caller's working directory, preserve quoted/empty arguments and exit status, and keep platform-specific behavior in the thin launchers.
 - Support first setup, build, preview, deploy, status/health, reconfiguration, and recovery. Build the actual deployable artifacts before preview/apply. Check required tool versions and give actionable prerequisite errors.
-- Ask for the environment first. Offer discovered/saved environments, including dev, qa and prod where configured, and allow validated custom names. Keep configuration, state, outputs, credentials scope and recovery receipts isolated by project/environment. Show account, region, environment, stack, backend and hostnames before any mutation.
+- After establishing the project identity on first setup, ask for the environment before other target-specific settings. Offer discovered/saved environments, including dev, qa and prod where configured, and allow validated custom names. Keep configuration, state, outputs, credentials scope and recovery receipts isolated by project/environment. Show account, region, environment, stack, backend and hostnames before any mutation.
 - When the architecture has an admin/index side, explicitly ask what to deploy: **Admin/index**, **Backend**, or **All**. For Backend or All, select the backend environment (or an explicit list of environments) and display the complete target list. All means admin/index plus the selected backend environments; never silently expand to every environment or production. For admin/index-only operations, use its shared configuration without asking irrelevant backend questions. Remember the scope/environment choices as defaults while keeping the selected targets visible. Deploy shared resources once, before dependent backends, and validate shared outputs before wiring them.
 - Where parallel deployments use the same base domain, support a saved configurable prefix with a visible default. Prefix deployment identity/state and application subdomains consistently. An explicitly empty prefix selects the final identity; it must not silently adopt or rename legacy resources. Keep email sender/verification domains unprefixed when reusing an existing SES identity.
 
@@ -49,7 +57,7 @@ Use AWS IAM Identity Center (SSO) for interactive deployments. Select and rememb
 
 ### Encrypted local store and remembered answers
 
-Create an encrypted local secret store on first setup, under a private operator directory such as `~/.attestra/<project>/<environment>/` or the platform configuration directory. Use established authenticated encryption and a password-based KDF with random salt/nonces and a versioned format. Capture/confirm its unlock passphrase without echo; never store that unlock passphrase alongside the vault. Scope vaults explicitly and provide deliberate credential update/rotation and recovery instructions. Do not invent a custom cipher.
+Create an encrypted local secret store on first setup, under the repository's ignored `.deploy/` directory, scoped by environment and target. Keep nonsecret central deployment records under `~/.infra-composer/<project_name>/` as specified in the shared rules. Use established authenticated encryption and a password-based KDF with random salt/nonces and a versioned format. Capture/confirm its unlock passphrase without echo; never store that unlock passphrase alongside the vault. Scope vaults explicitly and provide deliberate credential update/rotation and recovery instructions. Do not invent a custom cipher.
 
 Persist deployment secrets such as DNS tokens and, when selected, the Pulumi passphrase only inside this encrypted store. Unlock once per run and reuse in memory; a vault unlock can still be required on subsequent runs. An incorrect passphrase or corrupt vault must fail without overwriting it. Keep plaintext secrets out of Git, nonsecret settings, receipts, exports, logs and artifact uploads. Use private permissions/ACLs and atomic writes.
 

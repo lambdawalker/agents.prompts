@@ -44,6 +44,26 @@ Apply these rules whenever a library owns deployment tooling, regardless of impl
 - Secret entry/confirmation and destructive operations require deliberate input without automatic timeout approval. CI/noninteractive runs require explicit complete inputs and applicable approval flags; interactive countdowns never authorize CI work or change a preview/status/build action into deployment.
 - Test defaults, overrides, yes/no/Enter, timeout, cancellation, EOF, saved-answer reuse and interrupted setup with fake clocks/mocked services.
 
+## Deployment project identity and persistent records
+
+Apply this section only when the project owns deployment tooling. It does not require an ordinary library to introduce a deployment system.
+
+- On the first interactive deployment setup, ask for the project name before environment or provider questions. Validate it as a safe directory/identity component, offer a sensible default and apply the shared countdown rules. Persist the name so subsequent runs recognize the project without asking again. CI requires explicit project identity when no trusted saved identity is available; build-only work need not initialize deployment settings.
+- Group nonsecret deployment settings, flags, resource-bootstrap receipts, stack/workspace initialization records, operation locks and successful outputs under `~/.infra-composer/<project_name>/`, with separate environment/provider/account/region scopes as applicable. Use a versioned common record schema and consistent flag semantics across deployment tools; do not share mutable targets between unrelated scopes.
+- Create an ignored repository-root `.deploy/` directory for project identity, the encrypted credential vault, local configuration/flag snapshots and first-run/progress records. Never commit or publish this directory. Keep central records and local snapshots consistent, document which is authoritative, and do not store plaintext secrets in central flags, receipts or snapshots.
+- Recognize previous runs from valid scoped records, reuse saved choices, and prompt only for missing values, explicit reconfiguration or necessary secret unlocking. Explicit flags override valid saved settings. Distinguish setup started, initialized and successfully applied; write success flags atomically only after the corresponding operation succeeds.
+- Detect existing stacks/workspaces through a successful authoritative provider/state-backend lookup. Select existing state; initialize a genuinely absent stack automatically during authorized setup/preview/deploy. Do not require operators to know whether an initialization flag is needed. Failed lookups, inaccessible state, corrupted records or a missing previously initialized stack require recovery, not silent recreation. Status/teardown must never initialize resources.
+- Bind records to project and target identity. Reject accidental name collisions, checkout/target mismatches and cross-environment reuse. Support deliberate migration from earlier storage locations without rotating existing secrets, changing resource ownership or losing recovery metadata; re-encrypt vaults when their scope/path binding changes and preserve recovery copies.
+- Document paths, saved-flag precedence, first-run/rerun behavior, migration, backup and recovery. Test reruns, overrides, scope collisions, partial setup, failed remote lookups and missing previously initialized state with mocked services.
+
+## Console deployment wizard presentation
+
+- Present a polished, readable console flow: a compact project/product header, clear step headings, aligned labeled target details, consistent prompts, concise progress/status messages and actionable errors. Keep provider command output attributable to its step. Avoid decorative noise and excessive blank lines.
+- Update countdowns in place on one terminal line rather than printing a new line each second. Clear or replace that line on answer, completion, cancellation and error; avoid key echo corrupting progress text and restore terminal state on exit. Use a reusable prompt renderer so account confirmation, defaults and deployment approval behave consistently.
+- Detect terminal capabilities. Use optional color/emphasis with `NO_COLOR` and plain/dumb-terminal fallbacks; support Windows consoles. Redirected output and CI logs must remain readable without carriage-return/ANSI progress noise: emit one default/timeout explanation instead of per-tick frames.
+- Keep behavior understandable without color, animation or Unicode support. Presentation must not change approval/default semantics, hide the exact target, or imply success before verification.
+- Verify in-place output, redirected logs, no-color/plain modes, cancellation cleanup and platform builds. Preserve the shared five-second default rules and explicit secret/destructive confirmations.
+
 ## Deliver branches and pull requests
 
 For requested implementation/documentation work, default to a task branch, push the completed changes, and open or update a pull request. Honor explicit local-only instructions. Do not stop after a local commit or repeatedly ask for routine push permission already covered by the task. Include concrete behavior changes, validation actually run, limitations, and relevant PR links in delivery.
