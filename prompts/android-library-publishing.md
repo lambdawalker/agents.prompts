@@ -8,7 +8,7 @@ INPUTS
 - Enabled destinations: [Maven Central and public JitPack; retain other registries only if requested]
 - GitHub environments: [maven-central; jitpack, with no secrets for public builds]
 - Module versioning: [independent per module; shared across destinations for each module]
-- Propagation-delay environment: [delayed-docs; owner configures a 15-minute wait timer]
+- Propagation-delay environment: [delayed-docs; setup wizard configures a new 15-minute timer when supported; preserve and report existing timers]
 - Public-artifact polling budget: [40 minutes; finalization job timeout 50 minutes]
 - Version policy: [one optional version field; blank means first release 0.1.0, reuse latest version/original source for unchanged release inputs, otherwise increment the global module patch]
 - Explicit version override: [stable X.Y.Z newer than the latest global module identity; prereleases require a separately agreed policy]
@@ -61,6 +61,8 @@ Use existing compatible tooling where sound. The reference uses com.vanniktech.m
 
 Supply accurate POM name, description, project URL, license, developer information, and SCM links. Never assume the target project's license from the reference.
 
+If the target has no declared license, make that owner decision explicit and block real publication until accurate license metadata is supplied; do not silently grant the reference project's license. Public metadata needed by JitPack must be available in the immutable tagged source: GitHub Actions environment variables are not automatically available to JitPack's external builder. Credential-free verification may use clearly labeled local fixtures without treating them as a project license or confirmed release.
+
 For independently released libraries, provide one dedicated manual publishing workflow per library, each fixing its own module internally and calling a shared reusable implementation. Do not ask the user to select the module again inside its dedicated action. Keep histories, reservations, and confirmed metadata separate; finalizing one module must preserve sibling metadata.
 
 For multiple modules, default to independent module versions, with one version/source identity per module shared across destinations. Publish exactly the selected library; enforce selection in Gradle before publication tasks execute. A demo APK may be uploaded as a CI artifact, but must not become a Maven/JitPack publication.
@@ -102,6 +104,8 @@ Record semantic version separately from each destination's actual consumer coord
 
 Use a canonical registry mapping stable destination IDs to GitHub environment and publisher protocol (central, jitpack, and optional Maven-compatible services). Generate manual repository dropdowns and Gradle-readable public configuration from it; CI must detect drift. Remove retired destinations from selectable options without destroying their historical records. Do not keep URLs, credentials or secrets in the public registry.
 
+Accept only publisher protocols actually implemented by the target's Gradle configuration, upload guards and verification adapters. Reject an unsupported destination before reserving any release identity. Do not inherit a custom-Maven selector or upload task from the reference unless its repository and complete publication path are implemented and requested.
+
 Use per-destination confirmed records and pending journals, each keyed by module. Store the endpoint, source, semantic version, actual coordinates/consumer version, hashes, phase and dependency pins. Missing/null records must not imply availability.
 
 4. BUILD A CONTROLLED WORKFLOW
@@ -115,6 +119,8 @@ Use one stable, repository-specific JOB-LEVEL concurrency group for the publishi
 Concurrency alone is insufficient: preserve durable reservations and upload-started markers across reruns, runner failures, and non-Actions publication paths. GitHub's default concurrency behavior is not a durable FIFO queue; newer pending requests can replace older pending requests even with cancel-in-progress: false. Document this and make recovery safe to invoke again.
 
 Configure the required JDK, Android SDK/build tools, Gradle wrapper, and any helper runtime according to the target project. Use compatible, explicitly versioned actions and the repository's pinning policy.
+
+Check the wrapper's tracked executable mode. If it is not executable, invoke `bash gradlew` consistently in Linux workflows and the JitPack build helper, or deliberately commit the executable bit. Verification must exercise the same wrapper invocation used by actual publication; a passing Bash-based check must not conceal a later `./gradlew` permission failure. Keep the Gradle daemon JDK requirement separate from the published Java/Kotlin bytecode target.
 
 Run appropriate unit tests, lint/build checks, release assembly, generated-POM validation, and release-helper tests before publication. Build from the selected immutable source SHA.
 
@@ -156,6 +162,8 @@ Separate plugin completion from public registry propagation:
 The manual finalization entry point takes an existing version, bypasses the delay, and never builds, allocates, reserves, or uploads artifacts. It must work without Maven/signing secrets. Do not route an existing version entered in the publishing form to recovery; reject explicit version reuse and direct the maintainer to the Finalize action. Handle skipped dependency jobs explicitly in the automatic finalize condition without allowing failed or cancelled publication to trigger ordinary automatic finalization. Unknown upload outcomes require deliberate manual recovery.
 
 After obtaining the mutation lock, fetch remote state again and resolve the requested version from durable records. Validate the expected source when supplied by the publishing job. Reject unknown versions, conflicting tags, inconsistent marker records, or source mismatches. If the same release has already been finalized by the other path, exit successfully without polling, committing, or writing tags. An older completed release must also be a no-op and must never overwrite newer installation metadata, including while a later release is pending. Determine completion from consistent provenance records, not merely the presence of a tag.
+
+For an older version, require its archived confirmation for the selected destination and matching source before treating it as completed. An old canonical tag plus a newer confirmed release is insufficient: the old version may have been reserved but never published.
 
 For every intended artifact, confirm public POM identity, usable release AAR, sources, nonempty documentation artifact, Gradle metadata where published, and required detached signatures. Compare public artifacts with the SHA-256 hashes recorded before upload. Signature-file presence alone is not cryptographic signature verification; describe exactly what is checked. Do not equate staging acceptance or plugin success with public availability.
 
@@ -273,11 +281,17 @@ Run relevant Gradle checks and validate workflow YAML, expressions, shell script
 
 11. OWNER SETUP EXPERIENCE
 
-Where a setup helper is needed, reuse or adapt the reference's cross-platform Python terminal wizard. Read enabled environments/settings from the same registry. Mask tokens and secrets, show existing nonsecret defaults, preserve existing values on blank input, reject missing required values, preserve multiline signing-key files, and present a concrete review before writes. Respect existing environment protections. Encrypt secrets through the GitHub API, sanitize errors/logs, and report partial/uncertain writes for safe reruns. Do not request Maven credentials for public JitPack. The temporary setup token is distinct from publishing credentials and must not be persisted. Offline UI tests must synchronize with widget state or disable cosmetic animation timing rather than rely on runner speed; include Windows coverage when supporting Windows.
+When implementing publishing tooling, provide or adapt a cross-platform Python terminal wizard, such as `scripts/setup_github_environments.py`, with a pinned dependency file. It must ask the owner for a masked GitHub token; do not assume an authenticated `gh` session or a token stored in the checkout. Default to the target repository and support an explicit `--repo owner/name` override. Explain the required token permissions and the distinction between this temporary setup token, Central credentials and Actions' automatic `GITHUB_TOKEN`. Never persist or log the setup token.
+
+Read enabled destination environments/settings from the same registry, plus any required workflow-only environments. Enumerate environments independently of their setting lists so secret-free `jitpack` and `delayed-docs` environments are still inspected, reviewed and created. New `delayed-docs` environments should receive the 15-minute timer when supported, after review. Do not replace existing environments or reset their protection rules/timers; report any existing missing or different timer for owner reconciliation. Report plan/visibility limitations rather than claiming that a YAML environment reference configured a timer.
+
+Mask secrets, show existing nonsecret defaults, preserve existing values on blank input, reject missing required values, preserve multiline signing-key files, and present a concrete review before writes. Skip unnecessary environment creation and unchanged variable writes; existing secrets cannot be read back, so blank means keep rather than pretending to compare plaintext hashes. Encrypt secrets through GitHub's environment public-key API, reject unsafe credential redirects, sanitize errors/logs, and report partial/uncertain writes for safe reruns. Do not request Maven credentials for public JitPack.
+
+Test missing and existing environments, the empty JitPack environment, timer creation and protection retention, pagination, encrypted multiline secrets, blank-input preservation, cancellation before writes, and partial/network failures without exposing secrets. Offline UI tests must synchronize with widget state or disable cosmetic animation timing rather than rely on runner speed; include Linux and Windows coverage for the cross-platform helper. Document exact installation and launch commands. Adding the wizard does not authorize using real credentials or changing live settings during implementation.
 
 DELIVERABLES
 
-Provide the working workflows, canonical destination registry and generated dropdowns, build configuration, helpers, focused tests, installation template/reference, documentation-deployment integration, and release runbook. Include an environment setup helper when needed.
+Provide the working workflows, canonical destination registry and generated dropdowns, build configuration, helpers, focused tests, installation template/reference, documentation-deployment integration, release runbook, and Python GitHub environment setup wizard with its dependencies and launch commands.
 
 Include a destination-specific owner setup checklist. Public JitPack needs no access token, custom endpoint or signing key; explain any empty GitHub environment and optional protections. Only when Central is enabled: create maven-central with the four documented secret names; create delayed-docs with a 15-minute wait timer, no secrets, and no required reviewers if automatic continuation is intended; allow the release branch where deployment restrictions apply. Verify current GitHub plan/repository-visibility support for wait timers and report limitations. Merely referencing an environment does not configure its timer. Document existing bot contents/tag permissions and branch-protection requirements without requesting bypass tokens. Explicitly distinguish owner setup that remains unverified from settings actually inspected.
 
