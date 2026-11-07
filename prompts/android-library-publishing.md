@@ -237,6 +237,10 @@ Document how a maintainer verifies a definitively failed attempt before clearing
 
 10. VALIDATE WITHOUT A REAL RELEASE
 
+Run the documentation build and release archive verification on every pull request, including release tooling changes. Give the check a stable name and make it required for merges in the repository ruleset or branch protection. If settings access is unavailable, report that enforcement still needs to be configured. Keep PR validation read-only with respect to publishing and Pages deployment.
+
+For a versioned documentation site, test the real release exporter and site builder together. In an isolated fixture, record the same semantic version on Maven Central and JitPack from different commits. Verify separate provider-qualified URLs, the correct source and documentation revision at each URL, and the exact dependency coordinates for each provider. Keep coverage for existing plain-version archive URLs. Do not contact publication providers or write production release records in this test.
+
 Keep a selected-module CI matrix and a local verification repository. Test Central and unsigned JitPack publication configurations without remote upload or signing credentials. Add focused coverage for:
 - The same module version publishes to two providers at different commits and produces distinct immutable tags, coordinates where applicable, and archive paths.
 - Docs-only/sibling-only changes, model dependency pin changes, shared build changes, legacy identity conflicts and pending identities across destinations.

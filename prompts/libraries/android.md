@@ -31,6 +31,8 @@ The suite must:
 - Keep candidate generation, intentional baseline acceptance, and comparison/validation as separate operations. Normal validation must never silently overwrite accepted baselines.
 - Validate accepted baselines in CI. If no approved baseline exists, label initial output as candidates and check the required scenario inventory; a second identical render establishes repeatability only, not regression coverage.
 - Offer a manual rendering workflow and upload candidate images, comparison diffs/reports, and a source/hash manifest. Document exact local commands.
+- Classify CI screenshot candidates against the verified approved archive. When every PNG matches byte for byte but render inputs changed, publish a provenance-only patch for the baseline and documentation manifests. Keep image files unchanged and require a maintainer to review and apply the patch.
+- When a PNG differs or a variant is added or removed, publish a before-and-after gallery that identifies affected scenarios and marks missing sides. Require explicit baseline acceptance. Report an unchanged result when both PNGs and render inputs match.
 - Run appropriate compile/lint/tests for the actual screenshot source sets and module dependencies. Do not remove lint enforcement or hardware tests to hide incompatible renderer setup.
 
 Inspect rendered images for blank screens, missing guides, misaligned coordinates, clipping, unreadable labels, incorrect states, and theme/localization issues before accepting them. Host previews do not establish camera, permissions, navigation, focus, inference, lifecycle, or device correctness; verify those separately when relevant.
