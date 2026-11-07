@@ -67,6 +67,8 @@ Support an allowlisted export/import workflow when migrating from an existing de
 
 ### Preview and five-second deployment confirmation
 
+A plain interactive `deploy.sh` or `deploy.bat` invocation defaults to **deploy**: run prerequisites and build, preview successfully, then present the timed apply confirmation below. Do not stop after preview unless the operator explicitly selected preview-only. Keep explicit setup/build/status/preview actions unchanged, and require explicit deploy intent plus approval flags in CI/noninteractive mode.
+
 For an interactive invocation that explicitly selects deploy, complete prerequisite/identity checks, build and a successful Pulumi preview first. Display the exact target and preview summary, then ask:
 
 > Deploy the previewed changes? [Y/n] Continuing in 5 seconds; press n or Ctrl+C to cancel.
@@ -131,6 +133,14 @@ Use Pulumi's state locking and additional operation coordination where shared re
 Where DNS/SES are involved, remember the DNS provider and zone, use least-privilege scoped tokens, detect conflicting records and distinguish externally owned identities/certificates from managed resources. Explain staged deployment and readiness waits. Do not publish an endpoint as ready before required DNS/TLS and bootstrap work completes. Preserve shared email identity/DNS ownership before retiring legacy infrastructure.
 
 Export useful nonsecret URLs/client configuration and provide health checks plus a live acceptance checklist. Document backup/recovery of state, vault and passphrases, and the exact rerun command after interruption. Verify launcher behavior, environment isolation, saved-answer precedence, secret handling, expired SSO, state restoration, partial retries, and confirmation yes/no/timeout/EOF/cancellation with fake clocks and mocked cloud calls. Do not run a real deployment merely to test the wizard.
+
+## Artifact tagging and reporting: application versus feature
+
+Follow the shared [artifact ownership, tagging and report rules](shared.md#deployed-artifact-ownership-tagging-and-reports). An application/aggregator owns cross-feature orchestration and report aggregation; a feature repository owns its native inventory and standalone feature/test-stack reports. Feature code must not import host application modules to obtain reporting or claim host-provided API/identity/runtime resources.
+
+Use the existing Infra Composer reporting model and Pulumi adapters where available: safe state inventory, preview events and read-only refresh completions have different evidence semantics. Keep exact feature repository ownership on taggable resources and authoritative untaggable inventory rows. Use native AWS descriptions plus project/environment/component/owner tags; without a domain, display `<project-name>-<environment>`. Include owned bootstrap resources only with verified scope/ownership receipts; external shared state/DNS/GitHub resources retain host/operator ownership.
+
+Generate equivalent JSON/Markdown/self-contained HTML for preview and deployment attempts, and support feature-scoped report-only/read-only verification. Preserve partial failures, independent evidence/configuration timestamps, private scope-checked caches and safe settings allowlists. Application UI publication belongs to the host; a library needs no application dashboard to report its artifacts.
 
 ## Documentation and visuals
 
