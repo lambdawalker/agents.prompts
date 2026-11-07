@@ -17,8 +17,9 @@ Choose a library section and pair it with the appropriate primary workflow. Ever
 | [Kotlin libraries](prompts/libraries/kotlin.md) | Standalone workflow + Kotlin rules | System-integrated workflow + Kotlin rules |
 | [Go + AWS libraries](prompts/libraries/go-aws.md) | Standalone workflow + Go/AWS rules | System-integrated workflow + Go/AWS rules |
 | [Python libraries](prompts/libraries/python.md) | Standalone workflow + Python rules | System-integrated workflow + Python rules |
+| [Node.js libraries](prompts/libraries/node.md) | Standalone workflow + Node.js rules | System-integrated workflow + Node.js rules |
 
-[Shared library rules](prompts/libraries/shared.md) apply to all four sections: latest confirmed stable release on entry, coherent navigation across versions, useful reviewed screenshots, and pushed branches with pull requests by default. Version-specific content may differ. Android UI libraries must also have a screenshot test suite and previews for every library/demo composable.
+[Shared library rules](prompts/libraries/shared.md) apply to every section: latest confirmed stable release on entry, coherent navigation across versions, useful reviewed screenshots, and pushed branches with pull requests by default. Version-specific content may differ. Android UI libraries must also have a screenshot test suite and previews for every library/demo composable.
 
 ## Specialist supplements
 
@@ -26,7 +27,7 @@ Choose a library section and pair it with the appropriate primary workflow. Ever
 | --- | --- |
 | [Versioned and multilingual documentation](prompts/versioned-multilingual-documentation.md) | Shared policy used by the primary workflows: preserved release guides and installation history, module/version/language navigation, translation freshness, and durable rebuilds. |
 | [AI-agent documentation](prompts/ai-agent-documentation.md) | A deeper API-contract, lifecycle, ownership, troubleshooting, and agent-evaluation audit. |
-| [Android library publishing](prompts/android-library-publishing.md) | Maven Central and JitPack publication, Python GitHub-token environment setup wizard, independent module versions shared across destinations, recoverable releases, latest-available IMPORT.md, and automatic documentation deployment. |
+| [Android library publishing](prompts/android-library-publishing.md) | Maven Central and JitPack publication, Python GitHub-token environment setup wizard, independent versions per module and destination, recoverable releases, latest-available IMPORT.md, and automatic documentation deployment. |
 | [Python package publishing](prompts/python-package-publishing.md) | Release Please version/changelog PRs, validated wheel and sdist builds, PyPI Trusted Publishing, and recovery/setup guidance. |
 
 The former [Multi-repository documentation](prompts/multi-repository-documentation.md) entry redirects to the system-integrated workflow. Its ownership, branch consolidation, and release safeguards have been retained there.

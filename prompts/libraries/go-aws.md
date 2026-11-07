@@ -23,6 +23,10 @@ If infrastructure/deployment tooling exists, document environment selection, sta
 
 Apply this section when the requested project owns AWS infrastructure or deployment orchestration. Use Pulumi with an S3 state backend for new deployment tooling in this scope. An ordinary Go library needs no deployment wizard. A documentation-only task must describe the implemented behavior and report gaps; it does not silently authorize changing infrastructure tooling or running deployments.
 
+### Interactive defaults and countdowns
+
+Follow the [shared deployment question rules](shared.md#deployment-questions-defaults-and-countdowns) for every deployment question. Prefer authenticated discovery and saved settings over repeated prompts. Every question with a valid nonsecret default displays that default, its consequence and a visible five-second countdown; Enter accepts it immediately and timeout selects it. Required text without a valid default, secret entry and destructive confirmations remain explicit.
+
 ### Portable entrypoints and environments
 
 - Provide repository-root `deploy.sh` and `deploy.bat` launchers for the same Go deployment program. Resolve the repository root independently of the caller's working directory, preserve quoted/empty arguments and exit status, and keep platform-specific behavior in the thin launchers.
@@ -33,12 +37,12 @@ Apply this section when the requested project owns AWS infrastructure or deploym
 
 ### AWS authentication
 
-Use AWS IAM Identity Center (SSO) for interactive deployments. Select and remember the existing AWS CLI profile, check the session, and invoke `aws sso login --profile <profile>` when it expires or is missing. Verify STS account/role and region against the selected target before continuing. Do not repeatedly ask for credentials when the session is valid, solicit long-lived access keys as the normal path, or copy SSO cache credentials into the project's vault. In CI, use OIDC/assumed roles and explicit inputs; never start interactive SSO or rely on a workstation session.
+Use AWS IAM Identity Center (SSO) for interactive deployments. Select and remember the existing AWS CLI profile, check the session, and invoke `aws sso login --profile <profile>` when it expires or is missing. Discover the account number and signed-in role through STS rather than asking the operator to type the account number. Display account, role, region, environment and stack, then ask whether to proceed with a five-second default-yes countdown. Verify explicit/saved account and region constraints before continuing; a mismatch requires deliberate reconfiguration rather than timed acceptance. Do not repeatedly ask for credentials when the session is valid, solicit long-lived access keys as the normal path, or copy SSO cache credentials into the project's vault. In CI, use OIDC/assumed roles and explicit inputs; never start interactive SSO or rely on a workstation session.
 
 ### S3 state and passphrases
 
 - Require an S3-backed Pulumi state location (`s3://bucket/dedicated-prefix`), with distinct project/environment stacks and collision-safe state paths. Explain that Pulumi maintains state objects in the bucket; the operator does not manually edit a single state file.
-- Select an existing bucket or provide a separately identified, explicitly authorized bootstrap flow for a new one. Verify ownership/account, region, versioning, encryption at rest, public-access blocking and required access. Never treat a missing stack as permission to initialize over existing infrastructure.
+- Reuse a valid saved state location. On first setup, ask “Do you have an S3 bucket for deployment state?” instead of asking for a technical “backend” value. Show a five-second countdown and explain that the default no answer automatically creates a new state bucket. Yes asks for an existing bucket name (or offers verified discovered choices); derive the dedicated project prefix. When new state setup is authorized, no/Enter/timeout creates a collision-safe bucket in the displayed account/region without further naming input, with versioning, encryption, public-access blocking and TLS enforcement. Keep bootstrap distinct from stack deployment, save its identity and progress for recovery, and never auto-replace previously configured storage after an access/error response. CI requires an explicit state location and never infers bootstrap permission. Verify ownership/account, region, versioning, encryption at rest, public-access blocking and required access. Never treat a missing stack as permission to initialize over existing infrastructure.
 - On first setup, capture the passphrase used to encrypt Pulumi configuration secrets with hidden input and confirmation when creating a new one. For an existing stack, unlock with its existing passphrase; do not replace it. Configure Pulumi's passphrase secrets provider and pass secrets through protected environment/file/stdin mechanisms, never command-line values or logs.
 - Distinguish S3 server-side encryption, Pulumi secret encryption and the local credential vault. The Pulumi passphrase does not authenticate to S3 or encrypt every field in state. Protect state access with AWS IAM; do not describe S3 state as containing only public values.
 - Restore authoritative encrypted stack configuration and secrets-provider metadata on a fresh checkout before changing settings. Preserve existing secret values and generated proof/signing keys across reruns. Missing local YAML is not permission to regenerate secrets or rotate keys.
@@ -54,6 +58,8 @@ Save nonsecret answers separately with a versioned schema. After first setup, lo
 Support an allowlisted export/import workflow when migrating from an existing deployment. Reuse portable values without transferring legacy ownership or leaking secrets. Do not rename encrypted vault files to bypass repository/environment scope; any secret migration needs an explicit compatible decrypt/re-encrypt workflow.
 
 ### Preview and five-second deployment confirmation
+
+A plain interactive `deploy.sh` or `deploy.bat` invocation defaults to **deploy**: run prerequisites and build, preview successfully, then present the timed apply confirmation below. Do not stop after preview unless the operator explicitly selected preview-only. Keep explicit setup/build/status/preview actions unchanged, and require explicit deploy intent plus approval flags in CI/noninteractive mode.
 
 For an interactive invocation that explicitly selects deploy, complete prerequisite/identity checks, build and a successful Pulumi preview first. Display the exact target and preview summary, then ask:
 
@@ -119,6 +125,14 @@ Use Pulumi's state locking and additional operation coordination where shared re
 Where DNS/SES are involved, remember the DNS provider and zone, use least-privilege scoped tokens, detect conflicting records and distinguish externally owned identities/certificates from managed resources. Explain staged deployment and readiness waits. Do not publish an endpoint as ready before required DNS/TLS and bootstrap work completes. Preserve shared email identity/DNS ownership before retiring legacy infrastructure.
 
 Export useful nonsecret URLs/client configuration and provide health checks plus a live acceptance checklist. Document backup/recovery of state, vault and passphrases, and the exact rerun command after interruption. Verify launcher behavior, environment isolation, saved-answer precedence, secret handling, expired SSO, state restoration, partial retries, and confirmation yes/no/timeout/EOF/cancellation with fake clocks and mocked cloud calls. Do not run a real deployment merely to test the wizard.
+
+## Artifact tagging and reporting: application versus feature
+
+Follow the shared [artifact ownership, tagging and report rules](shared.md#deployed-artifact-ownership-tagging-and-reports). An application/aggregator owns cross-feature orchestration and report aggregation; a feature repository owns its native inventory and standalone feature/test-stack reports. Feature code must not import host application modules to obtain reporting or claim host-provided API/identity/runtime resources.
+
+Use the existing Infra Composer reporting model and Pulumi adapters where available: safe state inventory, preview events and read-only refresh completions have different evidence semantics. Keep exact feature repository ownership on taggable resources and authoritative untaggable inventory rows. Use native AWS descriptions plus project/environment/component/owner tags; without a domain, display `<project-name>-<environment>`. Include owned bootstrap resources only with verified scope/ownership receipts; external shared state/DNS/GitHub resources retain host/operator ownership.
+
+Generate equivalent JSON/Markdown/self-contained HTML for preview and deployment attempts, and support feature-scoped report-only/read-only verification. Preserve partial failures, independent evidence/configuration timestamps, private scope-checked caches and safe settings allowlists. Application UI publication belongs to the host; a library needs no application dashboard to report its artifacts.
 
 ## Documentation and visuals
 

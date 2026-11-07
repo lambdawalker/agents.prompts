@@ -7,11 +7,11 @@ INPUTS
 - Published modules: [discover from the project, or specify]
 - Enabled destinations: [Maven Central and public JitPack; retain other registries only if requested]
 - GitHub environments: [maven-central; jitpack, with no secrets for public builds]
-- Module versioning: [independent per module; shared across destinations for each module]
+- Module versioning: [independent per module and destination]
 - Propagation-delay environment: [delayed-docs; setup wizard configures a new 15-minute timer when supported; preserve and report existing timers]
 - Public-artifact polling budget: [40 minutes; finalization job timeout 50 minutes]
-- Version policy: [one optional version field; blank means first release 0.1.0, reuse latest version/original source for unchanged release inputs, otherwise increment the global module patch]
-- Explicit version override: [stable X.Y.Z newer than the latest global module identity; prereleases require a separately agreed policy]
+- Version policy: [one optional version field; blank means first release 0.1.0, reuse latest version/original source for unchanged release inputs, otherwise increment the destination’s module patch]
+- Explicit version override: [stable X.Y.Z newer than the latest module identity at the selected destination; prereleases require a separately agreed policy]
 - Cross-module release dependencies: [discover stable published pins and their repositories]
 - JitPack polling budget: [30 minutes; job timeout allows setup, build and finalization]
 - Documentation website: [discover existing workflow and GitHub Pages configuration]
@@ -65,7 +65,7 @@ If the target has no declared license, make that owner decision explicit and blo
 
 For independently released libraries, provide one dedicated manual publishing workflow per library, each fixing its own module internally and calling a shared reusable implementation. Do not ask the user to select the module again inside its dedicated action. Keep histories, reservations, and confirmed metadata separate; finalizing one module must preserve sibling metadata.
 
-For multiple modules, default to independent module versions, with one version/source identity per module shared across destinations. Publish exactly the selected library; enforce selection in Gradle before publication tasks execute. A demo APK may be uploaded as a CI artifact, but must not become a Maven/JitPack publication.
+For multiple modules, default to independent module versions, with one version/source identity per module and destination. Publish exactly the selected library; enforce selection in Gradle before publication tasks execute. A demo APK may be uploaded as a CI artifact, but must not become a Maven/JitPack publication.
 
 When a module depends on a sibling, build its release against an explicit compatible, already published dependency pin rather than an unpublished project dependency. Validate the pin in its POM and Gradle API/runtime variants and record the dependency's real repository. Development/demo builds may continue to use project dependencies. Verify packaged assets against the selected source; retrieve required Git LFS objects and reject pointer files or mismatched hashes. Keep recordings, screenshots and unrelated large media out of documentation archives.
 
@@ -80,19 +80,19 @@ Use the actual task names supported by the selected plugin. Development builds m
 
 Avoid competing version properties and pre-release source commits that only bump a hard-coded version.
 
-3. ALLOCATE SHARED MODULE IDENTITIES FROM VERIFIED HISTORY
+3. ALLOCATE DESTINATION-SCOPED MODULE IDENTITIES FROM VERIFIED HISTORY
 
-Fetch full Git history and tags. Maintain a canonical immutable source tag such as MODULE/vX.Y.Z, separate from destination-specific publication state. Order semantic versions numerically, not by tag dates, strings or workflow run numbers. Ignore unrelated tags and explicitly define prerelease handling.
+Fetch full Git history and tags. Maintain a canonical immutable source tag such as MODULE/vX.Y.Z-DESTINATION, separate from destination-specific publication state. Order semantic versions numerically, not by tag dates, strings or workflow run numbers. Ignore unrelated tags and explicitly define prerelease handling.
 
 Preserve verified module history across artifact renames according to the repository's migration policy; do not treat renamed coordinates as an entirely new module.
 
-Read history across every enabled and historical destination, including confirmed records and durable reservations. Preserve legacy tags; do not retag old releases or invent source provenance. Reject the same module/version associated with conflicting source SHAs. A source tag alone is not public availability; an artifact alone is not source provenance. Network failures are not empty registries. Existing untracked public versions require deliberate reconciliation; an allocation floor may be bootstrapped from verified public versions without claiming their source or reusing them for cross-destination publication.
+Read the selected destination’s confirmed records and durable reservations. Use its stable destination ID as the tag suffix. Maven Central keeps plain X.Y.Z as its consumer version. Preserve legacy tags; do not retag old releases or invent source provenance. Reject conflicting source SHAs for one module, destination and version. Allow the same module version at different destinations even when the source commits differ. A source tag alone is not public availability; an artifact alone is not source provenance. Network failures are not empty registries. Existing untracked public versions require deliberate reconciliation; an allocation floor may be bootstrapped from verified public versions without claiming their source or reusing them for cross-destination publication.
 
 For each selected module:
 - Blank or whitespace-only, with no history: use 0.1.0 without asking for an initial version. An explicit stable X.Y.Z may override the first version.
-- Explicit stable X.Y.Z with existing history: allocate a new identity only when strictly newer than the latest global module identity. Reject malformed versions, unsupported prereleases/snapshots, reused explicit versions, and downgrades before reservation or upload; never bypass provenance or unresolved-attempt guards. Blank input alone selects the safe reuse/catch-up behavior below.
-- With blank input, if current release inputs match the latest global module identity, reuse that version AND the original tagged source. If the selected destination already confirms that identity, exit successfully without upload, a new tag, or documentation mutation.
-- With blank input, if release inputs changed on a descendant source, allocate X.Y.(Z+1) from the latest global module identity, even if the selected destination has missed many releases. Increment only the patch component: 0.1.9 becomes 0.1.10, not 0.2.0.
+- Explicit stable X.Y.Z with existing history: allocate a new identity only when strictly newer than the latest module identity at the selected destination. Reject malformed versions, unsupported prereleases/snapshots, reused explicit versions, and downgrades before reservation or upload; never bypass provenance or unresolved-attempt guards. Blank input alone selects the safe reuse behavior below.
+- With blank input, if current release inputs match the latest module identity at the selected destination, reuse that version AND the original tagged source. If the selected destination already confirms that identity, exit successfully without upload, a new tag, or documentation mutation.
+- With blank input, if release inputs changed on a descendant source, allocate X.Y.(Z+1) from the latest module identity at the selected destination. Increment only the patch component: 0.1.9 becomes 0.1.10, not 0.2.0.
 - Reject an older checkout, an older explicit version, or reuse of an existing version for changed inputs. An explicit new major/minor/patch version must exceed the latest identity.
 - A destination catching up must never build current HEAD under an old tag. Reused source must contain the needed publication protocol; otherwise require a new version instead of mutating historical source.
 
@@ -135,7 +135,7 @@ Validate required secret presence without printing values. Document Central Port
 
 5. RECORD THE ATTEMPT BEFORE UPLOADING
 
-Before any upload or JitPack build request, durably reserve the module version/source and destination attempt. Create or validate the canonical MODULE/vX.Y.Z source tag and destination journal atomically where possible. Example journals: release-pending/MODULE/X.Y.Z for legacy Central compatibility, and release-pending/DESTINATION/MODULE/X.Y.Z for other destinations. Reuse an existing canonical tag only when its source agrees; never move it.
+Before any upload or JitPack build request, durably reserve the module version/source and destination attempt. Create or validate the canonical MODULE/vX.Y.Z-DESTINATION source tag and destination journal atomically where possible. Example journals: release-pending/MODULE/X.Y.Z for legacy Central compatibility, and release-pending/DESTINATION/MODULE/X.Y.Z for other destinations. Reuse an existing canonical tag only when its source agrees; never move it.
 
 Record or make recoverable:
 - For Maven uploads, expected SHA-256 hashes for the complete validated artifact set. For JitPack, local candidate evidence and source-content expectations, with verified remote hashes recorded after the provider build.
@@ -145,7 +145,7 @@ Record or make recoverable:
 - Publication/deployment identifier when available.
 - Release phase and how to inspect the result.
 
-An unresolved destination/module attempt must block blindly retrying its upload. Pending identities also participate in global version allocation so another destination cannot assign the same number to different source. Keep unrelated modules independent, and permit another destination to publish the same reserved source identity when safe. Reserve before upload, not after receiving success: a runner may lose its connection after Central accepts the artifact.
+An unresolved attempt blocks another publication for that module and destination by default. Offer an opt-in boolean `allow_pending_jitpack` for JitPack, default false. It requires an explicit version strictly newer than every pending JitPack attempt and verifies the older journals and immutable source ancestry before proceeding. Enforce it both during prepare and atomic reservation. Preserve every bypassed journal and tag. Upload-started markers, same-version retries, artifact integrity checks and GitHub environment approvals remain enforced. Maven destinations do not use the checkbox.
 
 Release tags and pending-attempt references have different meanings. Never advertise an attempt marker as a completed release.
 
@@ -173,7 +173,7 @@ Handle transient registry errors with bounded retries. Stop clearly on contradic
 
 JitPack builds tagged source itself; it is not a Central upload endpoint. Configure jitpack.yml to invoke an explicit build helper with compatible toolchains and the Gradle wrapper. Parse a canonical module tag, verify it identifies HEAD and check any supplied build commit. Reject unsupported branch/snapshot/commit publication requests under this stable-release policy. Install only the selected unsigned library into MavenLocal; guard against sibling, application and remote upload tasks. Never expose Central credentials to this build.
 
-Distinguish semantic X.Y.Z from the tag-derived consumer version. JitPack represents tag folders with `~`, for example MODULE~vX.Y.Z. Determine actual coordinates from the chosen publication layout and verify them; do not assume Central's artifact names survive JitPack harvesting. Single-publication and multi-module layouts differ. The CardDetector reference selects one publication and uses repository coordinates. If independently tagged modules share a group/artifact, consumers cannot select both versions simultaneously: explain that limitation and use a verified published dependency for bundles. If both must coexist independently, select and validate a distinct-artifact layout instead of copying that limitation blindly.
+Distinguish semantic X.Y.Z from the tag-derived consumer version. JitPack represents tag folders with `~`, for example MODULE~vX.Y.Z-jitpack. Determine actual coordinates from the chosen publication layout and verify them; do not assume Central's artifact names survive JitPack harvesting. Single-publication and multi-module layouts differ. The CardDetector reference selects one publication and uses repository coordinates. If independently tagged modules share a group/artifact, consumers cannot select both versions simultaneously: explain that limitation and use a verified published dependency for bundles. If both must coexist independently, select and validate a distinct-artifact layout instead of copying that limitation blindly.
 
 Validate an unsigned candidate locally, reserve the source identity/destination journal, then request the intended artifact to start the remote build. Poll both provenance and public artifacts within the budget. Retry queued/building statuses, temporary missing artifacts, rate limits and transient server/network errors. Treat failed builds and contradictory identity as terminal with useful build-log links.
 
@@ -189,7 +189,7 @@ Create or reuse:
 - verifyImportDocs: drift validation.
 - IMPORT.md: committed generated installation reference.
 
-For EACH module, select the highest confirmed semantic version across destinations. Show only destinations confirming that version at the same source SHA. If A has a newer release than B, direct consumers to A; when B catches up, show both as choose-one options. Reject conflicting source identities at the same highest version. Tags, pending builds and partial uploads never replace confirmed installation instructions. Keep independent modules and their pinned dependencies explicit.
+For each module, show the latest confirmed version, source and dependency coordinates per destination. If two destinations confirmed the same semantic version from different source commits, label them separately. Pending builds and partial uploads never replace confirmed installation instructions.
 
 Render using each destination's actual group/artifact/consumer version and required repository declarations, including dependency repositories. Record destination facts separately from mutable development configuration; never imply a JitPack version string is the same as Central's semver. Do not advertise an older destination as a source of the newest release. Include applicable Gradle Kotlin DSL, Groovy DSL, version-catalog, and Maven examples, supporting all public artifacts.
 
@@ -201,7 +201,7 @@ Replace independently maintained current-version dependency snippets in README, 
 
 Explicitly instruct humans and agents to read IMPORT.md for latest confirmed installation choices, or the selected module/version archive for historical coordinates and matching guides, rather than guessing.
 
-Apply [Versioned and multilingual documentation](versioned-multilingual-documentation.md) for the shared historical documentation policy. Preserve an exact-version catalog of confirmed destination facts before replacing latest pointers, and archive new confirmations with finalization bookkeeping. Same-version catch-up adds a destination only when source identity agrees. Keep archive entries separate from latest-pointer and attempt-journal discovery so new JSON files cannot corrupt version allocation or recovery.
+Apply [Versioned and multilingual documentation](versioned-multilingual-documentation.md) for the shared historical documentation policy. Preserve an exact-version catalog of confirmed destination facts before replacing latest pointers, and archive new confirmations with finalization bookkeeping. Store each new archive under a destination-qualified identity and route. Preserve historical archive paths and existing dependency coordinates. Keep archive entries separate from latest-pointer and attempt-journal discovery so new JSON files cannot corrupt version allocation or recovery.
 
 Generate historical installation pages from their own records; latest IMPORT.md remains the latest-per-module view. Pin full guides, API, examples and translations to retained immutable documentation identities, independently of later destination availability. Do not republish an artifact to add a locale or fix prose. Rebuild all cataloged versions after successful confirmation, including JitPack, while preserving manual documentation-only retry and existing environment delays/locks. Verify same-revision translation fallback, exact dependency pins and optional-model prerequisites; navigation must not suggest that same-artifact JitPack module dependencies can be installed together.
 
@@ -245,10 +245,15 @@ Document how a maintainer verifies a definitively failed attempt before clearing
 
 10. VALIDATE WITHOUT A REAL RELEASE
 
+Run the documentation build and release archive verification on every pull request, including release tooling changes. Give the check a stable name and make it required for merges in the repository ruleset or branch protection. If settings access is unavailable, report that enforcement still needs to be configured. Keep PR validation read-only with respect to publishing and Pages deployment.
+
+For a versioned documentation site, test the real release exporter and site builder together. In an isolated fixture, record the same semantic version on Maven Central and JitPack from different commits. Verify separate provider-qualified URLs, the correct source and documentation revision at each URL, and the exact dependency coordinates for each provider. Keep coverage for existing plain-version archive URLs. Do not contact publication providers or write production release records in this test.
+
 Keep a selected-module CI matrix and a local verification repository. Test Central and unsigned JitPack publication configurations without remote upload or signing credentials. Add focused coverage for:
-- Multiple releases to A followed by catch-up to B: reuse the latest module identity/original SHA, create no duplicate canonical tag, and no-op after confirmation.
+- The same module version publishes to two providers at different commits and produces distinct immutable tags, coordinates where applicable, and archive paths.
 - Docs-only/sibling-only changes, model dependency pin changes, shared build changes, legacy identity conflicts and pending identities across destinations.
 - Latest-only installation selection, numeric ordering, equal-version same-source destinations, conflicting sources, unpublished rename notices and accurate dependency repositories.
+- A pending JitPack release blocks by default, an explicit newer version can proceed with the checkbox, and upload-started markers still block.
 - JitPack tag parsing, single-module task selection, actual consumer coordinates, queued/building retries, failed builds, API source mismatch, partial artifacts and real LFS assets.
 - Registry/dropdown drift, retired destinations and destination-appropriate environment/secret isolation.
 - Successful top-level publication/recovery triggering documentation with latest metadata, without a bot-push assumption or release loop.
@@ -256,7 +261,7 @@ Keep a selected-module CI matrix and a local verification repository. Test Centr
 Test helpers with fixtures, mocked registry responses, and temporary Git repositories. Include:
 - Semantic ordering such as 0.1.9 versus 0.1.10.
 - Blank and whitespace-only first-release input selecting 0.1.0; explicit first-version overrides; no-tags bootstrap.
-- Blank subsequent input reusing the original version/source for unchanged inputs (or no-op when confirmed), incrementing the latest global patch for changed inputs, and explicit higher patch/minor/major overrides.
+- Blank subsequent input reusing the original version/source for unchanged inputs (or no-op when confirmed), incrementing the latest destination patch for changed inputs, and explicit higher patch/minor/major overrides.
 - Reused/older versions and invalid overrides rejected without bypassing provenance or pending-attempt checks.
 - Exactly one optional `version` input on each manual publishing form, forwarded correctly to the shared implementation; recovery only through the dedicated finalizer.
 - Independent module histories and preservation of sibling metadata when applicable.
@@ -295,6 +300,6 @@ Provide the working workflows, canonical destination registry and generated drop
 
 Include a destination-specific owner setup checklist. Public JitPack needs no access token, custom endpoint or signing key; explain any empty GitHub environment and optional protections. Only when Central is enabled: create maven-central with the four documented secret names; create delayed-docs with a 15-minute wait timer, no secrets, and no required reviewers if automatic continuation is intended; allow the release branch where deployment restrictions apply. Verify current GitHub plan/repository-visibility support for wait timers and report limitations. Merely referencing an environment does not configure its timer. Document existing bot contents/tag permissions and branch-protection requirements without requesting bypass tokens. Explicitly distinguish owner setup that remains unverified from settings actually inspected.
 
-The runbook must show the single optional version field alongside the destination selector, blank-input first/subsequent examples including unchanged-source catch-up/no-op and changed-input patch allocation, explicit-version overrides, and the separate recovery action. It must explain first-time setup, ordinary release, version policy, exact source selection, artifact set, publication success criteria, installation generation, protected-branch handling, site updates, and failure recovery.
+The runbook must show the single optional version field alongside the destination selector, blank-input first/subsequent examples including unchanged-source reuse/no-op and changed-input patch allocation, explicit-version overrides, and the separate recovery action. It must explain first-time setup, ordinary release, version policy, exact source selection, artifact set, publication success criteria, installation generation, protected-branch handling, site updates, and failure recovery.
 
 Finish with a concise report listing changes, validation results, required GitHub/destination setup, actual verified publication/build evidence, limitations, and commit or PR links. State explicitly that no real release was performed unless separately authorized and actually completed.
