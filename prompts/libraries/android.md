@@ -38,3 +38,5 @@ Inspect rendered images for blank screens, missing guides, misaligned coordinate
 ## Use the reviewed images in documentation
 
 Explain the primary flow on the landing page using the most useful reviewed screenshots, then link to full guides and demos. Include additional screenshots where they explain overlays, review/retake states, controls, or localization. Keep baseline files and curated documentation assets distinct but traceable through a manifest and intentional acceptance step. Apply the shared latest-release entry and coherent-navigation rules to both standalone and integrated documentation.
+
+For Android library publishing, use provider-scoped immutable tags with a plain semantic version input. JitPack may expose an explicit opt-in bypass for older pending attempts. Apply the validation, migration, and documentation rules in the [publishing supplement](../android-library-publishing.md).
