@@ -286,6 +286,8 @@ Run relevant Gradle checks and validate workflow YAML, expressions, shell script
 
 11. OWNER SETUP EXPERIENCE
 
+Use the [terminal setup wizard supplement](setup-wizards.md) for shared interaction, confirmation, and recovery guidance. The Android-specific credential rules below take precedence.
+
 When implementing publishing tooling, provide or adapt a cross-platform Python terminal wizard, such as `scripts/setup_github_environments.py`, with a pinned dependency file. It must ask the owner for a masked GitHub token; do not assume an authenticated `gh` session or a token stored in the checkout. Default to the target repository and support an explicit `--repo owner/name` override. Explain the required token permissions and the distinction between this temporary setup token, Central credentials and Actions' automatic `GITHUB_TOKEN`. Never persist or log the setup token.
 
 Read enabled destination environments/settings from the same registry, plus any required workflow-only environments. Enumerate environments independently of their setting lists so secret-free `jitpack` and `delayed-docs` environments are still inspected, reviewed and created. New `delayed-docs` environments should receive the 15-minute timer when supported, after review. Do not replace existing environments or reset their protection rules/timers; report any existing missing or different timer for owner reconciliation. Report plan/visibility limitations rather than claiming that a YAML environment reference configured a timer.

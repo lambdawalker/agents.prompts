@@ -29,6 +29,7 @@ Choose a library section and pair it with the appropriate primary workflow. Ever
 | [AI-agent documentation](prompts/ai-agent-documentation.md) | A deeper API-contract, lifecycle, ownership, troubleshooting, and agent-evaluation audit. |
 | [Android library publishing](prompts/android-library-publishing.md) | Maven Central and JitPack publication, Python GitHub-token environment setup wizard, independent versions per module and destination, recoverable releases, latest-available IMPORT.md, and automatic documentation deployment. |
 | [Python package publishing](prompts/python-package-publishing.md) | Release Please version/changelog PRs, validated wheel and sdist builds, PyPI Trusted Publishing, and recovery/setup guidance. |
+| [Terminal setup and deployment wizards](prompts/setup-wizards.md) | First-run and repeat setup, prompt defaults, secure vaults, confirmation screens, workflow previews, and recovery. |
 
 The former [Multi-repository documentation](prompts/multi-repository-documentation.md) entry redirects to the system-integrated workflow. Its ownership, branch consolidation, and release safeguards have been retained there.
 
