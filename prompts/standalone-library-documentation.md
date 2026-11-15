@@ -39,7 +39,7 @@ Prefer this structure, adapting it to the repository:
 - docs/screenshots/: curated original documentation images, a scenario manifest, and regeneration instructions, only if visuals are useful.
 - sites/: human site source, locked dependencies, theme, build scripts, and local preview instructions.
 - Existing examples/app/sample modules: actual runnable demonstrations.
-- scripts/ and CI workflows: reproducible rendering, synchronization, validation, and deployment.
+- Maintained tool launchers/configuration and CI workflows: reproducible rendering, synchronization, validation, and deployment. Keep local scripts only where genuinely project-specific; do not create a scripts/ placeholder.
 
 Keep AGENTS.md for repository contributor instructions. Do not use it as the consumer API manual or imply that the repository contains an autonomous agent service. Link to the consumer entry point from it where appropriate. Preserve old documentation entry links with short redirects when reorganizing.
 
@@ -47,7 +47,7 @@ Define canonical ownership explicitly: source for API behavior, release metadata
 
 3. BUILD A COMPLETE HUMAN WEBSITE
 
-Preserve the current framework; for a new documentation site, Astro/Starlight is a reasonable default after checking current official documentation and project compatibility. Keep site dependencies separate from library runtime dependencies.
+Preserve the current framework unless migration is in scope; for a new documentation site, Astro/Starlight is a reasonable default after checking current official documentation and project compatibility. Android repositories use the shared CLI-owned Astro backend under [Shared Android repository automation](android-repository-automation.md), rather than copying a frontend into each consumer. For those repositories, sites/ contains output, overrides and any domain-specific hooks instead of requiring a complete site application. Keep site dependencies separate from library runtime dependencies.
 
 Include:
 - Overview: purpose, suitable use cases, boundaries, and a realistic first example.

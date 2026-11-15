@@ -9,6 +9,8 @@ Use this section with the selected primary documentation workflow and [shared li
 
 Identify JVM, Kotlin Multiplatform, Android, JS/Wasm, or native targets from the actual build. Document supported platforms and tested combinations without extrapolating one target's success to all others. For multiplatform libraries, separate common contracts from target-specific behavior and dependencies.
 
+For JVM modules using `gradle.android-repo-setup`, also load [Shared Android repository automation](../android-repository-automation.md). Use evaluated JVM discovery, explicit JAR verification and the shared release engine; do not impose Android plugins, SDK, signing or screenshot jobs on a headless JVM module.
+
 ## Contracts and examples
 
 Document coroutine scopes/dispatchers, cancellation, structured concurrency, Flow emission/replay/backpressure behavior, resource ownership, nullability, errors, and thread safety where present. Include Java interop or platform interop when exposed. Use executable examples, runnable samples, and public API verification appropriate to the repository. Preserve established versioning and binary/source compatibility practices.

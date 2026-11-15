@@ -1,6 +1,6 @@
 # Android libraries
 
-Use this section with the selected primary documentation workflow and [shared library rules](shared.md). Apply it to Android libraries and their sample/demo applications. For non-Android Kotlin libraries, use the [Kotlin section](kotlin.md).
+Use this section with the selected primary documentation workflow and [shared library rules](shared.md). Apply it to Android libraries and their sample/demo applications. For non-Android Kotlin libraries, use the [Kotlin section](kotlin.md). Load [Shared Android repository automation](../android-repository-automation.md) for CLI ownership, declarative configuration, shared Astro documentation, migration checks and mixed Android/JVM builds. Its ecosystem-specific rules take precedence over generic local-script and deployment-vault suggestions.
 
 ## Standalone or part of a larger project
 
@@ -13,7 +13,7 @@ Preserve established AGP, Gradle, Kotlin, Compose, JDK, and SDK choices. Check o
 
 When asked to add deployment/publication scripts for Maven Central or JitPack, load and implement the [Android publishing supplement](../android-library-publishing.md). It covers both standalone libraries and libraries inside a larger application. Implement the release Gradle configuration, manual workflows, immutable release tracking, verification/recovery helpers and runbook; do not stop at a workflow skeleton or a list of secrets. Publish only the intended library release variant, excluding demo applications and internal/mock modules.
 
-Include a cross-platform Python setup script that asks for a masked GitHub token and configures the required GitHub environments, variables and encrypted secrets after a concrete review. Public JitPack's environment is secret-free; Central also needs its propagation-delay environment. Preserve existing values and protection rules. Creating the tooling does not authorize running the wizard against live settings or publishing a package.
+Use the pinned shared `android-repo-setup` wizard and generated cross-platform launchers to configure GitHub environments, variables and encrypted secrets after a concrete review. Do not recreate a Python setup wizard. Public JitPack's environment is secret-free; Central also needs its propagation-delay environment. Preserve existing values, protection rules and the shared vault/signing conventions. Creating the tooling does not authorize live settings changes or publishing a package.
 
 Use CardDetector as the implementation reference identified in the supplement, adapting its approach to the target repository rather than copying its license, coordinates, module identifiers or toolchain. The supplement remains authoritative for detailed release, setup and recovery requirements.
 
@@ -65,4 +65,4 @@ Inspect rendered images for blank screens, missing guides, misaligned coordinate
 
 Explain the primary flow on the landing page using the most useful reviewed screenshots, then link to full guides and demos. Include additional screenshots where they explain overlays, review/retake states, controls, or localization. Keep baseline files and curated documentation assets distinct but traceable through a manifest and intentional acceptance step. Apply the shared latest-release entry and coherent-navigation rules to both standalone and integrated documentation.
 
-For Android library publishing, use provider-scoped immutable tags with a plain semantic version input. JitPack may expose an explicit opt-in bypass for older pending attempts. Apply the validation, migration, and documentation rules in the [publishing supplement](../android-library-publishing.md).
+For Android library publishing, use provider-scoped immutable tags with a plain semantic version input. Use the pinned CLI’s explicit JitPack override only under its documented version/provenance guards; preserve older pending attempts. Apply the validation, migration, and documentation rules in the [publishing supplement](../android-library-publishing.md).
