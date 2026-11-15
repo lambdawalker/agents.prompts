@@ -4,6 +4,8 @@ Use this prompt to build or improve a terminal wizard that configures local
 tools, credentials, GitHub environments, or deployment workflows. Pair it with
 the target's publishing or infrastructure rules when those apply.
 
+For Android repositories, apply [Shared Android repository automation](android-repository-automation.md): reuse the Rust setup wizard, generated launchers and existing vault. Do not interpret this generic wizard prompt as a request to create another Python implementation.
+
 ## Inspect and define the scope
 
 - Identify the target repository, supported operating systems, actual tools,
@@ -97,6 +99,6 @@ storage, and recovery. Deliver reviewable repository changes and report what
 was actually verified.
 
 Reference implementations include
-[Android Repository Setup](https://github.com/lambdawalker/python.android-repo-setup)
+[Android Repository Setup](https://github.com/lambdawalker/gradle.android-repo-setup)
 and [Maven Key](https://github.com/lambdawalker/python.utilities.maven-key).
 Use their patterns without copying project-specific coordinates or policy.

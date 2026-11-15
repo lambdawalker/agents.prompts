@@ -1,307 +1,107 @@
-Act as a senior Android build/release engineer and documentation maintainer. Create or improve this Android library's GitHub Actions publishing system for Maven Central and JitPack, with independent module releases, shared version identities across destinations, recoverable publication bookkeeping, and installation documentation generated from confirmed availability.
+# Android and JVM library publishing
 
-INPUTS
+Act as a senior Android/JVM build and release engineer. Implement or migrate this repository's publication system using the shared tooling in [gradle.android-repo-setup](https://github.com/lambdawalker/gradle.android-repo-setup). Load [Shared Android repository automation](android-repository-automation.md), the appropriate [Android](libraries/android.md) / [Kotlin](libraries/kotlin.md) section and [versioned documentation policy](versioned-multilingual-documentation.md). Read each dependency once.
 
-- Target repository: [REPOSITORY_URL]
-- Release branch: [main]
-- Published modules: [discover from the project, or specify]
-- Enabled destinations: [Maven Central and public JitPack; retain other registries only if requested]
-- GitHub environments: [maven-central; jitpack, with no secrets for public builds]
-- Module versioning: [independent per module and destination]
-- Propagation-delay environment: [delayed-docs; setup wizard configures a new 15-minute timer when supported; preserve and report existing timers]
-- Public-artifact polling budget: [40 minutes; finalization job timeout 50 minutes]
-- Version policy: [one optional version field; blank means first release 0.1.0, reuse latest version/original source for unchanged release inputs, otherwise increment the destination’s module patch]
-- Explicit version override: [stable X.Y.Z newer than the latest module identity at the selected destination; prereleases require a separately agreed policy]
-- Cross-module release dependencies: [discover stable published pins and their repositories]
-- JitPack polling budget: [30 minutes; job timeout allows setup, build and finalization]
-- Documentation website: [discover existing workflow and GitHub Pages configuration]
-- Delivery: [local changes / pull request / commit to target branch]
+## Inputs and scope
 
-REFERENCE
+- Target repository and release branch: [URL; main unless established otherwise].
+- Intended published modules: [discover and review evaluated Gradle inventory].
+- Destinations: [Maven Central and public JitPack; retain other registries only when requested and fully supported].
+- Tooling pins: [inspect setup/docs pins and separately versioned Gradle plugins; choose verified compatible revisions].
+- Version policy: [shared semantic version/source identity per module; independent module streams; destination-specific availability and recovery].
+- Hosting: [preserve existing documentation workflow, including artifact-only validation].
+- Delivery: [push task branch and open/update PR unless explicitly directed otherwise].
 
-Use https://github.com/lambdawalker/android.apexfission.carddetector as the primary reference for destination-aware independent module publication. Inspect its current:
-- publishing/repositories.yml, generated repositories.properties, and scripts/publishing_config.py
-- .github/workflows/publish-card-detector.yml, publish-card-detector-model.yml, publish-card-detection.yml, publish-jitpack.yml, and finalize-carddetector.yml
-- scripts/module_release.py, release_identity.py, jitpack_build.py, jitpack_release.py, import_docs.py, and scripts/tests/
-- jitpack.yml, root/module Gradle publishing configuration, and dependency pins
-- docs/releases/, docs/templates/MODULE_IMPORT.md.template, IMPORT.md, and docs/releases.md
-- .github/workflows/documentation.yml and verify-release-tooling.yml
-- scripts/setup_github_environments.py and github_environment_api.py
+Implement configuration, Gradle integration, generated launchers/workflows, validation and runbooks. Do not stop at a workflow skeleton or secret list. Modify the existing release path rather than adding a competing one. Do not publish a package, run a live JitPack release build, change live environments/protections, move immutable tags or deploy production merely to validate tooling. Report required owner setup separately.
 
-The retired private Maven destination is not a default requirement. Preserve historical provenance without re-enabling retired destinations. Examples in a runbook do not prove publication; inspect confirmed records and actual build results.
+## Inspect current implementations
 
-Use https://github.com/lambdawalker/android.apexfission.yolo as the reference for separated publication, delayed verification, and race-safe manual finalization. Inspect its current:
-- .github/workflows/publish-yolo.yml and .github/workflows/finalize-yolo.yml
-- scripts/release.py, scripts/finalize-release.sh, and scripts/tests/
-- docs/releases.md and .github/workflows/verify-release-tooling.yml
+The shared CLI's current source, supported configuration and tests define the implementation contract. Read its bootstrap, module discovery, release assets, reconciliation and JVM guides linked from the automation supplement. Inspect the exact pinned revision, not just main or the latest release label. Upgrade only after capability checks pass. Generic release engine changes belong upstream; do not copy that engine back into a consumer.
 
-Use https://github.com/lambdawalker/android.apexfission.permissions as an additional Android build/publication reference. Inspect its current:
-- .github/workflows/publish-permission.yml
-- permission/build.gradle.kts
-- build.gradle.kts and gradle.properties
-- scripts/release.py and scripts/finalize-release.sh
-- scripts/tests/ and .github/workflows/verify-release-tooling.yml
-- docs/templates/IMPORT.md.template, IMPORT.md, and docs/releases.md
+Use these consumers as examples to inspect, without assuming every main branch has the same migration status:
 
-Adapt the approach, not its project-specific identifiers. Do not copy its namespace, module names, SDK levels, coordinates, author, license, or versions into another library. Verify current official publishing-plugin, Central, JitPack and GitHub Actions documentation before selecting APIs or plugin versions. Useful JitPack references: https://docs.jitpack.io/building/, https://docs.jitpack.io/faq/, https://docs.jitpack.io/api/ and https://docs.jitpack.io/private/. Treat the reference as an implementation to evaluate, not proof that every edge case is solved.
+- [Card Detector](https://github.com/lambdawalker/android.apexfission.carddetector): independent core/model publications, explicit published dependency pins, model/LFS asset validation and domain-specific docs projections.
+- [Demo Common](https://github.com/lambdawalker/android.apexfission.demo-common) and [Permissions](https://github.com/lambdawalker/android.apexfission.permissions): Android build/publication conventions and consumer documentation.
+- [Coordinates](https://github.com/lambdawalker/android.apexfission.math.coordinates): root Kotlin/JVM JAR publication using the same release engine.
+- [Signature](https://github.com/lambdawalker/android.apexfission.signature): headless/source-only documentation and validation, not evidence of a published Maven release.
 
-SCOPE
+Inspect `.project/setup/`, `.project/docs/`, `.project/verification/`, Gradle files, generated workflows, `jitpack.yml`, `IMPORT.md` and `docs/releases/` where present. Old paths such as `scripts/module_release.py` or `publishing/repositories.yml` are migration inputs, not files to recreate. Do not copy another project's namespace, license, coordinates, toolchain, signing identity or version. Check current official provider/plugin documentation when changing that integration.
 
-Implement the workflow, necessary Gradle configuration, release helpers, tests, template, and documentation. Modify an existing publishing workflow rather than creating a competing release path.
+## Define publications and Gradle contracts
 
-Do not publish a real package, trigger a release workflow, invent credentials, change repository protection rules, or configure external accounts merely to complete this task. List any owner setup still required. Preserve unrelated source behavior and demo applications' local project dependencies.
+Discover actual module kinds through evaluated Gradle plugins. Keep stable release IDs distinct from paths/directories. Publish only selected library release variants, never applications, debug variants, internal mocks or unintended siblings. Preserve normal demo project dependencies and unrelated source behavior.
 
-1. AUDIT AND DEFINE PUBLICATIONS
+Keep compatible root/library/application conventions. CLI versions and Gradle plugin versions are separate. JVM modules retain compatible Java/Kotlin/Maven integration where the chosen Android publication plugin cannot support them. Configure root/nested scoped tasks and the release properties expected by the pinned engine, including `releaseVersion`, `releaseModule`, `jitpackBuild` and `jitpackScopedTag` where applicable.
 
-Inspect repository instructions, modules, Gradle wrapper, AGP/Kotlin/JDK requirements, version catalogs, publishing plugins, existing CI, release tags, public Central artifacts, licenses, and documentation.
+Validate the unsigned local publication before reserving or uploading: POM identity/dependencies, AAR or JAR, sources, nonempty documentation archive and Gradle module metadata. Configure explicit per-module verification contracts rather than inheriting Demo Common defaults. Check package prefixes, bytecode target, API/runtime dependency versions/scopes, forbidden dependencies, assets and exclusions. Keep the Gradle daemon JDK separate from the published bytecode target.
 
-Identify each publishable Android library and its release variant. Do not accidentally publish application modules, debug variants, or internal modules.
+JVM modules select `packaging: jar` and explicit JVM metadata rules; Android defaults to AAR. Validate executable API/runtime variants separately from documentation variants. Central requires the recorded artifact/signature set. JitPack may omit Gradle metadata under the supported verifier policy; independently rebuilt ZIPs require source/content validation rather than equality to local ZIP bytes. Never reinterpret an AAR reservation as JAR or vice versa.
 
-Use existing compatible tooling where sound. The reference uses com.vanniktech.maven.publish; reuse it or select a justified compatible approach. Verify that the configured tasks produce the intended release AAR, sources, documentation artifact, POM, and signatures, with metadata required by Central. Inspect dependency scopes and generated publication metadata.
+Provide accurate POM project, SCM, developer and license metadata. Missing license is an owner decision blocking real publication; do not copy a reference license. Public JitPack needs required metadata in immutable source, not only Actions environment variables. Clearly labeled local fixtures are not real release metadata.
 
-Supply accurate POM name, description, project URL, license, developer information, and SCM links. Never assume the target project's license from the reference.
+For sibling runtime dependencies, publish against an explicit compatible already-published pin and validate it in POM/Gradle variants. Preserve independent core/model versions and correct provider repositories. Hydrate required Git LFS assets, reject pointer files and verify immutable source/hash/format contracts. Exclude recordings, screenshots, debug fixtures and unrelated binaries from source/javadoc archives. Keep intended model assets only in their selected artifact.
 
-If the target has no declared license, make that owner decision explicit and block real publication until accurate license metadata is supplied; do not silently grant the reference project's license. Public metadata needed by JitPack must be available in the immutable tagged source: GitHub Actions environment variables are not automatically available to JitPack's external builder. Credential-free verification may use clearly labeled local fixtures without treating them as a project license or confirmed release.
+Exercise the wrapper exactly as workflows/JitPack do; preserve its executable bit or use `bash gradlew` consistently. Local development must work without publishing credentials or a stable release override. Development fallback versions must never silently become public releases.
 
-For independently released libraries, provide one dedicated manual publishing workflow per library, each fixing its own module internally and calling a shared reusable implementation. Do not ask the user to select the module again inside its dedicated action. Keep histories, reservations, and confirmed metadata separate; finalizing one module must preserve sibling metadata.
+## Generate a single maintained release path
 
-For multiple modules, default to independent module versions, with one version/source identity per module and destination. Publish exactly the selected library; enforce selection in Gradle before publication tasks execute. A demo APK may be uploaded as a CI artifact, but must not become a Maven/JitPack publication.
+Declare destinations once in `.project/setup/repositories.yml` and generate the matching public properties/dropdowns. Keep endpoints/credentials in their supported nonpublic settings, not the public registry. Reject unsupported publisher protocols before reservation. Remove retired selectable destinations while retaining historical facts.
 
-When a module depends on a sibling, build its release against an explicit compatible, already published dependency pin rather than an unpublished project dependency. Validate the pin in its POM and Gradle API/runtime variants and record the dependency's real repository. Development/demo builds may continue to use project dependencies. Verify packaged assets against the selected source; retrieve required Git LFS objects and reject pointer files or mismatched hashes. Keep recordings, screenshots and unrelated large media out of documentation archives.
+Use CLI-generated per-module manual publishing workflows and shared finalization/reconciliation. Each module action fixes its module internally. Use the pin's repository selector, one optional semantic `version` input and supported narrowly scoped override inputs; do not create competing initial/resume version fields. Recovery has its own action and never allocates or uploads. Document the exact generated field names rather than inventing a consumer-specific interface.
 
-2. CENTRALIZE COORDINATES AND VERSION INPUT
+Preserve the shared repository mutation lock with `cancel-in-progress: false` across allocation/reservation/finalization. Keep Central's propagation delay outside that lock and avoid nested caller/callee locks. Concurrency is not durable journaling or a FIFO queue; the pinned release engine must enforce safety after runner failures and direct Gradle invocations too.
 
-Keep coordinates in one authoritative build configuration and use them for both publication and documentation rendering.
+Configure the selected destination's actual GitHub environment. Public JitPack needs no Central credentials, publishing token or signing key. Central uses its existing secret mapping, commonly:
 
-Expose exactly one optional manual publishing input named `version` (string, default empty). Use a clear description such as: "Optional X.Y.Z. Blank: first release 0.1.0; unchanged inputs reuse latest source/version; changed inputs use next patch." Do not expose separate `initial_version` and `resume_version` fields. Resolve this optional input to a concrete version before invoking Gradle, such as:
-./gradlew :library:publishAndReleaseToMavenCentral -PreleaseVersion=X.Y.Z
-
-Use the actual task names supported by the selected plugin. Development builds must work without release credentials or a release version. A development snapshot fallback must never silently become a stable Central publication. Validate the explicit version before any remote publication side effect.
-
-Avoid competing version properties and pre-release source commits that only bump a hard-coded version.
-
-3. ALLOCATE DESTINATION-SCOPED MODULE IDENTITIES FROM VERIFIED HISTORY
-
-Fetch full Git history and tags. Maintain a canonical immutable source tag such as MODULE/vX.Y.Z-DESTINATION, separate from destination-specific publication state. Order semantic versions numerically, not by tag dates, strings or workflow run numbers. Ignore unrelated tags and explicitly define prerelease handling.
-
-Preserve verified module history across artifact renames according to the repository's migration policy; do not treat renamed coordinates as an entirely new module.
-
-Read the selected destination’s confirmed records and durable reservations. Use its stable destination ID as the tag suffix. Maven Central keeps plain X.Y.Z as its consumer version. Preserve legacy tags; do not retag old releases or invent source provenance. Reject conflicting source SHAs for one module, destination and version. Allow the same module version at different destinations even when the source commits differ. A source tag alone is not public availability; an artifact alone is not source provenance. Network failures are not empty registries. Existing untracked public versions require deliberate reconciliation; an allocation floor may be bootstrapped from verified public versions without claiming their source or reusing them for cross-destination publication.
-
-For each selected module:
-- Blank or whitespace-only, with no history: use 0.1.0 without asking for an initial version. An explicit stable X.Y.Z may override the first version.
-- Explicit stable X.Y.Z with existing history: allocate a new identity only when strictly newer than the latest module identity at the selected destination. Reject malformed versions, unsupported prereleases/snapshots, reused explicit versions, and downgrades before reservation or upload; never bypass provenance or unresolved-attempt guards. Blank input alone selects the safe reuse behavior below.
-- With blank input, if current release inputs match the latest module identity at the selected destination, reuse that version AND the original tagged source. If the selected destination already confirms that identity, exit successfully without upload, a new tag, or documentation mutation.
-- With blank input, if release inputs changed on a descendant source, allocate X.Y.(Z+1) from the latest module identity at the selected destination. Increment only the patch component: 0.1.9 becomes 0.1.10, not 0.2.0.
-- Reject an older checkout, an older explicit version, or reuse of an existing version for changed inputs. An explicit new major/minor/patch version must exceed the latest identity.
-- A destination catching up must never build current HEAD under an old tag. Reused source must contain the needed publication protocol; otherwise require a new version instead of mutating historical source.
-
-Define and test a deterministic release-input fingerprint. Include selected library source/resources/assets, packaged docs, build scripts, dependency catalogs, wrapper/toolchain configuration and relevant shared release tooling. Exclude generated IMPORT.md, confirmation records, unrelated sibling-only source and unrelated module properties. Be conservative about uncertain inputs, and document the policy. Exact SHA equality is sufficient for reuse; generated-docs-only commits should not force endless patch increments. Changes to documentation actually packaged in an artifact count as release inputs.
-
-Record semantic version separately from each destination's actual consumer coordinate/version. Coordinates can differ between Central and JitPack even for the same module identity. Reconcile public destination metadata before writes; refuse untracked collisions or newer unexplained releases.
-
-3A. DECLARE DESTINATIONS ONCE
-
-Use a canonical registry mapping stable destination IDs to GitHub environment and publisher protocol (central, jitpack, and optional Maven-compatible services). Generate manual repository dropdowns and Gradle-readable public configuration from it; CI must detect drift. Remove retired destinations from selectable options without destroying their historical records. Do not keep URLs, credentials or secrets in the public registry.
-
-Accept only publisher protocols actually implemented by the target's Gradle configuration, upload guards and verification adapters. Reject an unsupported destination before reserving any release identity. Do not inherit a custom-Maven selector or upload task from the reference unless its repository and complete publication path are implemented and requested.
-
-Use per-destination confirmed records and pending journals, each keyed by module. Store the endpoint, source, semantic version, actual coordinates/consumer version, hashes, phase and dependency pins. Missing/null records must not imply availability.
-
-4. BUILD A CONTROLLED WORKFLOW
-
-Provide a clearly named workflow_dispatch entry point per publishable module, with a generated repository selector and exactly one optional `version` field. Do not expose `initial_version` or `resume_version`. Ordinary releases use the configured destination and leave `version` blank; no patch number needs to be guessed. Explicit versions request a new identity, never recovery. Keep recovery exclusively in the separate finalization action. Shared workflow_call implementations are called by these entry points; document that they do not themselves display a Run workflow button. Provide a separate manual finalizer taking destination, module and version.
-
-For Central, split the workflow into publish, propagation-delay, and finalize. JitPack uses local validation, source-tag reservation, remote build/public verification, and finalization, with no Central delay or signing secrets. Provide a separate finalization workflow with both workflow_call and workflow_dispatch entry points; automatic and manual confirmation must use the same implementation.
-
-Use one stable, repository-specific JOB-LEVEL concurrency group for the publishing job and the finalizer's mutating job, with cancel-in-progress: false. Cover allocation, reservation, upload, confirmation, and Git finalization with this lock. Keep the delay job outside it. Do not hold a workflow-level or caller-job lock while invoking a reusable workflow that needs the same lock: that can block manual recovery or deadlock the automatic path. Do not use per-run, per-workflow-name, or per-version groups that allow overlapping mutations of shared release history.
-
-Concurrency alone is insufficient: preserve durable reservations and upload-started markers across reruns, runner failures, and non-Actions publication paths. GitHub's default concurrency behavior is not a durable FIFO queue; newer pending requests can replace older pending requests even with cancel-in-progress: false. Document this and make recovery safe to invoke again.
-
-Configure the required JDK, Android SDK/build tools, Gradle wrapper, and any helper runtime according to the target project. Use compatible, explicitly versioned actions and the repository's pinning policy.
-
-Check the wrapper's tracked executable mode. If it is not executable, invoke `bash gradlew` consistently in Linux workflows and the JitPack build helper, or deliberately commit the executable bit. Verification must exercise the same wrapper invocation used by actual publication; a passing Bash-based check must not conceal a later `./gradlew` permission failure. Keep the Gradle daemon JDK requirement separate from the published Java/Kotlin bytecode target.
-
-Run appropriate unit tests, lint/build checks, release assembly, generated-POM validation, and release-helper tests before publication. Build from the selected immutable source SHA.
-
-Use the selected destination’s GitHub environment for its release secrets and existing approval gates. Resolve that environment from the registry in ordinary and recovery paths; do not hard-code a different environment in a reusable workflow. Public JitPack requires no JitPack publishing token, signing key or custom repository URL; an associated GitHub environment may remain empty. GitHub supplies its automatic token for permitted tag/documentation writes. Private JitPack access requires a separately scoped authentication/subscription design; never assume public-access rules apply. Expose secrets only to steps that need them. For the reference's plugin, the environment mapping is:
-
+```text
 MAVEN_CENTRAL_USERNAME -> ORG_GRADLE_PROJECT_mavenCentralUsername
 MAVEN_CENTRAL_PASSWORD -> ORG_GRADLE_PROJECT_mavenCentralPassword
 SIGNING_IN_MEMORY_KEY -> ORG_GRADLE_PROJECT_signingInMemoryKey
 SIGNING_IN_MEMORY_KEY_PASSWORD -> ORG_GRADLE_PROJECT_signingInMemoryKeyPassword
+```
 
-Validate required secret presence without printing values. Document Central Portal token setup, verified namespace ownership, signing-key requirements, and the signing-key password when the key is encrypted (it may remain unset for an unencrypted key). Never put keys or tokens in Git, logs, caches, or test fixtures.
+Validate presence without printing values. Preserve the configured Central delay/poll budgets and provider gates; the established default is a secret-free delayed-docs environment with a 15-minute wait when supported, then bounded public polling. A YAML environment reference does not configure a wait timer. Keep read-only validation permissions separate from trusted release/tag/docs writes; never request bypass credentials to defeat protected branches.
 
-5. RECORD THE ATTEMPT BEFORE UPLOADING
+## Preserve immutable version identity and durable journals
 
-Before any upload or JitPack build request, durably reserve the module version/source and destination attempt. Create or validate the canonical MODULE/vX.Y.Z-DESTINATION source tag and destination journal atomically where possible. Example journals: release-pending/MODULE/X.Y.Z for legacy Central compatibility, and release-pending/DESTINATION/MODULE/X.Y.Z for other destinations. Reuse an existing canonical tag only when its source agrees; never move it.
+Use the shared allocator, fingerprint, upload guard and finalizer. For new versions, one `release-identity/<module>/<version>` binds exact source and build-input fingerprint across destinations. Destinations retain their own reservations, upload markers, hashes, receipts and confirmation status. Independent destinations do not authorize different source for the same new identity. Historical provider-specific equal version numbers from different sources remain distinct historical facts.
 
-Record or make recoverable:
-- For Maven uploads, expected SHA-256 hashes for the complete validated artifact set. For JitPack, local candidate evidence and source-content expectations, with verified remote hashes recorded after the provider build.
-- For Maven uploads, a durable upload-started marker created before remote upload; reject a second upload invocation for the same reservation. For JitPack, retain the destination reservation and build-request evidence; repeated polling must not allocate a new identity.
-- Version and coordinates for every intended artifact.
-- Exact source SHA.
-- Publication/deployment identifier when available.
-- Release phase and how to inspect the result.
+Blank version input uses the shared policy: first release 0.1.0; unchanged inputs reuse the canonical original source/version, or no-op for an already-confirmed destination; changed inputs require the next valid module patch beyond known identity history. Explicit stable X.Y.Z must satisfy the pin's ordering, source and pending-attempt checks. Do not derive a catch-up release from current HEAD under an older tag. Preserve the allocator's historical collision/ancestry checks and semantic ordering (0.1.10 > 0.1.9).
 
-An unresolved attempt blocks another publication for that module and destination by default. Offer an opt-in boolean `allow_pending_jitpack` for JitPack, default false. It requires an explicit version strictly newer than every pending JitPack attempt and verifies the older journals and immutable source ancestry before proceeding. Enforce it both during prepare and atomic reservation. Preserve every bypassed journal and tag. Upload-started markers, same-version retries, artifact integrity checks and GitHub environment approvals remain enforced. Maven destinations do not use the checkbox.
+Build fingerprints include selected runtime/build/toolchain/verification inputs and exclude mutable generated installation pointers, release archives and unrelated sibling changes according to the shared policy. Do not broaden exclusions simply to reuse an old version. Packaged documentation changes may affect artifact inputs.
 
-Release tags and pending-attempt references have different meanings. Never advertise an attempt marker as a completed release.
+After unsigned local validation, reserve source identity and destination attempt durably before any remote side effect. Keep canonical `<module>/vX.Y.Z-<destination>` source tags immutable and preserve legacy tags/consumer versions. Annotated pending/uploading journals are recovery records, not confirmed releases. Record complete expected artifact hashes, source, coordinates, dependency pins and the immutable resolved verification snapshot.
 
-6. PUBLISH AND VERIFY MAVEN CENTRAL COMPLETION
+Wire the CLI guard into actual Central upload tasks, including aggregate publish-and-release paths, before uploading. Local verification does not invoke the upload guard. Capture/persist the provider deployment receipt when available, including uncertain failures; retain useful sanitized logs. A workflow-only guard that direct Gradle upload can bypass is insufficient.
 
-Invoke the plugin's actual publish-and-release task, not a staging/upload-only task while claiming completion.
+Unresolved, partial, active or uncertain outcomes retain their journals and block unsafe retries. Never blindly upload twice, delete pending tags because CI failed, force-move source tags or substitute today's verification config for an old attempt. Recovery without a snapshot must use the original immutable source contract; if unavailable, report the blocker or explicitly verify with original tooling in an isolated historical checkout. Do not rewrite old journals to claim the current contract applied.
 
-Separate plugin completion from public registry propagation:
+## Confirm and reconcile safely
 
-- Publish job: validate, reserve, mark upload-started, invoke the actual publish-and-release task, retain useful deployment identifiers/logs, and expose the immutable version/source as job outputs. Waiting performed inside the publishing plugin still consumes this job's runner; do not claim the environment wait removes that work.
-- Propagation-delay job: after successful ordinary publication, reference the secret-free delayed-docs environment with a 15-minute wait timer. The wait is configured in GitHub Settings, not by YAML timeout-minutes. GitHub waits before assigning a runner; use only a short no-op step after the gate opens. Do not substitute a runner sleep or hold the release concurrency lock during this gate.
-- Finalization job: after the gate, call the shared finalization workflow with the reserved version and expected source. Poll public Maven endpoints for up to 2400 seconds (40 minutes), exiting early when complete. Allow a 50-minute execution timeout for setup and final Git operations. This provides roughly 15 + 40 = 55 minutes for propagation after plugin completion, plus queue/setup time; it is not a guaranteed end-to-end duration.
+Central plugin completion/staging acceptance is not public availability. Confirm every recorded public artifact, POM identity/dependencies, content/hash and required detached signatures before advancing docs. Distinguish signature presence from cryptographic signature verification. Poll transient failures within budget; contradictory identity/hash is a failure, and a partial set never finalizes.
 
-The manual finalization entry point takes an existing version, bypasses the delay, and never builds, allocates, reserves, or uploads artifacts. It must work without Maven/signing secrets. Do not route an existing version entered in the publishing form to recovery; reject explicit version reuse and direct the maintainer to the Finalize action. Handle skipped dependency jobs explicitly in the automatic finalize condition without allowing failed or cancelled publication to trigger ordinary automatic finalization. Unknown upload outcomes require deliberate manual recovery.
+JitPack builds the reserved immutable source, installing only the selected unsigned publication into MavenLocal. Verify full provider-reported source SHA and usable public POM/AAR-or-JAR/sources/docs with dependency/asset/bytecode contracts. Record actual remote hashes; do not require Central signatures or compare independent ZIP metadata against local archives. Source tags with folders may yield consumer versions such as `<module>~vX.Y.Z-jitpack`; verify actual group/artifact/version layout. Explain same-artifact independently tagged module collisions rather than suggesting incompatible coordinates can coexist.
 
-After obtaining the mutation lock, fetch remote state again and resolve the requested version from durable records. Validate the expected source when supplied by the publishing job. Reject unknown versions, conflicting tags, inconsistent marker records, or source mismatches. If the same release has already been finalized by the other path, exit successfully without polling, committing, or writing tags. An older completed release must also be a no-op and must never overwrite newer installation metadata, including while a later release is pending. Determine completion from consistent provenance records, not merely the presence of a tag.
+Ordinary release, automatic finalization and manual recovery use the same shared implementation. Finalization may verify and mutate metadata; it never runs a local artifact build, uploads, allocates a version or requests signing credentials. JitPack artifact requests can start an uncached build of the already-reserved tag: recovery is not provider-side-effect-free. Do not force a rebuild, change the source or allocate a new identity during recovery. Re-fetch state under the lock, validate expected source and all journal identities, preserve concurrent main/sibling changes, and use atomic/leased ref operations. Already-completed releases are idempotent no-ops and must not overwrite newer installation metadata. Preserve journals if final Git bookkeeping fails so recovery remains possible.
 
-For an older version, require its archived confirmation for the selected destination and matching source before treating it as completed. An old canonical tag plus a newer confirmed release is insufficient: the old version may have been reserved but never published.
+Use supported preview/apply reconciliation rather than ad hoc tag deletion. Fully verified public artifacts can finalize without upload. For an attempted provider upload/build, archive failure only with repeated terminal provider evidence and absence of all public artifacts, matching source/journal identity and unchanged refs. The shared reconciler also supports narrowly scoped pre-upload Central abandonment: prove the new reservation never passed the atomic upload guard, verify no public artifacts and atomically fence a late guard before archiving. Do not extend this exception to legacy or uncertain upload attempts. Missing receipts, unknown status, authentication errors, partial artifacts, mismatched hashes and ambiguous JitPack `tagNotFound` remain `needs-review`. Preserve the original annotated journal object under the failed-attempt reference and keep source/version identities immutable. Narrow JitPack pending overrides preserve older attempts and never bypass upload-started guards.
 
-For every intended artifact, confirm public POM identity, usable release AAR, sources, nonempty documentation artifact, Gradle metadata where published, and required detached signatures. Compare public artifacts with the SHA-256 hashes recorded before upload. Signature-file presence alone is not cryptographic signature verification; describe exactly what is checked. Do not equate staging acceptance or plugin success with public availability.
+## Generate truthful installation and Astro documentation
 
-Handle transient registry errors with bounded retries. Stop clearly on contradictory identity/hash metadata or permanent failures. Missing artifacts may still be propagating: poll within the budget, but never finalize a partial artifact set. On timeout or failure, retain attempt markers and leave the confirmed release documentation unchanged. Availability checks supplement provenance; they do not independently prove who built or uploaded the artifacts.
+Use `android-repo-docs` for template-based `IMPORT.md`, source examples, history and shared Astro builds. Setup owns release confirmation; the docs executable cannot create publication facts. Keep the existing human-editable template, generated-file notice and deterministic check/update commands rather than introducing another local Python renderer.
 
-6A. BUILD AND CONFIRM JITPACK SEPARATELY
+Only confirmed availability advances latest installation facts. Render actual per-destination consumer coordinates, source and dependency pins; do not infer publication from proposed versions, tags or a successful build. Preserve exact destination-qualified archives before replacing latest pointers, and preserve historical paths. Keep history separate from pending journal discovery. README/current guides link to canonical installation facts; historical pages use their own archived facts, never latest IMPORT.md.
 
-JitPack builds tagged source itself; it is not a Central upload endpoint. Configure jitpack.yml to invoke an explicit build helper with compatible toolchains and the Gradle wrapper. Parse a canonical module tag, verify it identifies HEAD and check any supplied build commit. Reject unsupported branch/snapshot/commit publication requests under this stable-release policy. Install only the selected unsigned library into MavenLocal; guard against sibling, application and remote upload tasks. Never expose Central credentials to this build.
+Pin historical guides/examples/API/translation trees to retained immutable source/documentation provenance. Prose fixes and new locales do not republish artifacts. Apply the automation supplement's shared Astro, raw Markdown, fallback, alias, media and root/project-prefix checks. Separate docs-only retry from package upload. Trigger site updates only within the existing authorized deployment policy; preserve artifact-only validation. A docs deployment failure must never re-upload the package.
 
-Distinguish semantic X.Y.Z from the tag-derived consumer version. JitPack represents tag folders with `~`, for example MODULE~vX.Y.Z-jitpack. Determine actual coordinates from the chosen publication layout and verify them; do not assume Central's artifact names survive JitPack harvesting. Single-publication and multi-module layouts differ. The CardDetector reference selects one publication and uses repository coordinates. If independently tagged modules share a group/artifact, consumers cannot select both versions simultaneously: explain that limitation and use a verified published dependency for bundles. If both must coexist independently, select and validate a distinct-artifact layout instead of copying that limitation blindly.
+## Owner setup, validation and delivery
 
-Validate an unsigned candidate locally, reserve the source identity/destination journal, then request the intended artifact to start the remote build. Poll both provenance and public artifacts within the budget. Retry queued/building statuses, temporary missing artifacts, rate limits and transient server/network errors. Treat failed builds and contradictory identity as terminal with useful build-log links.
+Use the shared Rust setup wizard and generated `setup.sh` / `setup.bat` / `.project/setup/bootstrap.ps1`; do not recreate a Python GitHub environment wizard. Preserve existing encrypted local vault/signing conventions, secret masking, concrete review, blank-input preservation and partial-write recovery. Distinguish temporary GitHub setup authentication, Actions `GITHUB_TOKEN`, Central credentials, Maven OpenPGP keys and APK keystores. No secrets in source, logs, process arguments, fixtures or reports. Shared wizard guidance: [terminal setup](setup-wizards.md).
 
-Require successful remote build status at the exact reserved full commit SHA AND valid public POM, AAR, sources, documentation and available Gradle metadata. Validate dependencies, bytecode compatibility and packaged assets. A successful status alone is insufficient. Do not require Central detached signatures or compare independently rebuilt ZIPs against local candidate hashes as proof of correctness. Record the downloaded public artifact hashes after verification; validate source-specific content contracts against the reservation. State the limits of trusting provider-reported provenance.
+Document namespace/token/signing prerequisites, environment names and actual permissions. Inspect secret-free environments too. Preserve existing timers/protection rules; report unsupported plan/visibility features and required owner actions without pretending they were configured. Do not run setup against live settings as part of offline migration validation.
 
-Keep application-controlled source tags immutable, but do not claim this makes the external service's artifacts immutable immediately. Check current provider rebuild/retention policies; changes to a build configuration require a new source identity, not silently moving a release tag. Recovery targets the same reserved source and version, never a new allocation or blind rebuild. A first live build is separate validation requiring authorization; local/CI build success must not be reported as confirmed JitPack publication.
+Run appropriate Gradle tests/build/lint and unsigned local verification, generated bootstrap/workflow/registry drift checks, relevant config/YAML checks and documentation checks. Test selected Android and JVM artifact contracts as applicable. Verify recovery paths with shared-tool fixtures or focused integration checks, never a live upload. Generic engine unit tests belong in the CLI; do not copy them into every consumer. Retain tests for project-specific dependency/asset/metadata behavior.
 
-7. GENERATE AUTHORITATIVE INSTALLATION DOCUMENTATION
+Review failures that commonly break migration: wrong source/pin, stale launcher cache, missing binary PATH, wrong scoped task, skipped upload guard, missing receipt, changed verification snapshot, duplicate workflows, partial publication, concurrent finalization and stale docs. Confirm the shared engine's applicable tests cover version ordering, unchanged-source reuse/no-op, pending attempts, provider hash/source mismatches and idempotent recovery. Report unavailable checks accurately.
 
-Create or reuse:
-- docs/templates/IMPORT.md.template: human-editable content.
-- generateImportDocs: deterministic build task.
-- verifyImportDocs: drift validation.
-- IMPORT.md: committed generated installation reference.
-
-For each module, show the latest confirmed version, source and dependency coordinates per destination. If two destinations confirmed the same semantic version from different source commits, label them separately. Pending builds and partial uploads never replace confirmed installation instructions.
-
-Render using each destination's actual group/artifact/consumer version and required repository declarations, including dependency repositories. Record destination facts separately from mutable development configuration; never imply a JitPack version string is the same as Central's semver. Do not advertise an older destination as a source of the newest release. Include applicable Gradle Kotlin DSL, Groovy DSL, version-catalog, and Maven examples, supporting all public artifacts.
-
-Add a generated-file notice naming the template and regeneration command. Keep Markdown content out of workflow YAML.
-
-Without a version override, local regeneration should use the last recorded confirmed release, not a proposed next version. Preserve the published metadata when development coordinates change; detecting drift must not silently advertise unpublished coordinates.
-
-Replace independently maintained current-version dependency snippets in README, docs, website, and agent guidance with links to IMPORT.md. Preserve migration history, compatibility statements, lockfiles, and samples intentionally using project dependencies.
-
-Explicitly instruct humans and agents to read IMPORT.md for latest confirmed installation choices, or the selected module/version archive for historical coordinates and matching guides, rather than guessing.
-
-Apply [Versioned and multilingual documentation](versioned-multilingual-documentation.md) for the shared historical documentation policy. Preserve an exact-version catalog of confirmed destination facts before replacing latest pointers, and archive new confirmations with finalization bookkeeping. Store each new archive under a destination-qualified identity and route. Preserve historical archive paths and existing dependency coordinates. Keep archive entries separate from latest-pointer and attempt-journal discovery so new JSON files cannot corrupt version allocation or recovery.
-
-Generate historical installation pages from their own records; latest IMPORT.md remains the latest-per-module view. Pin full guides, API, examples and translations to retained immutable documentation identities, independently of later destination availability. Do not republish an artifact to add a locale or fix prose. Rebuild all cataloged versions after successful confirmation, including JitPack, while preserving manual documentation-only retry and existing environment delays/locks. Verify same-revision translation fallback, exact dependency pins and optional-model prerequisites; navigation must not suggest that same-artifact JitPack module dependencies can be installed together.
-
-8. FINALIZE WITHOUT LOSING PROVENANCE OR CONCURRENT WORK
-
-Canonical source tags are reserved before publication, particularly because JitPack needs a tag to build. Only after confirmed publication:
-- Generate and verify IMPORT.md with the published version.
-- Commit only intended generated documentation changes, if any, using the Actions bot identity.
-- Verify the existing canonical source tag still resolves to the artifact source. Create a missing tag only for explicitly supported legacy recovery, never as proof of availability.
-- Remove or complete the pending attempt record.
-
-The later documentation commit need not be the release-tag target.
-
-Fetch current remote state before finalization. Preserve unrelated concurrent changes, newer application/build inputs and sibling/destination confirmation records. Generate against current release-branch metadata using the reserved publication facts. Do not reject delayed finalization solely because HEAD advanced. If the executing release protocol or renderer changed incompatibly, stop for reconciliation rather than mixing assumptions. Never force-push the release branch or move existing release tags.
-
-Prefer atomic Git updates when available so branch, release tag, and pending-reference updates cannot partially complete. Otherwise implement explicit recoverable finalization states.
-
-Use only necessary permissions. Respect branch protection; support the repository's permitted PR or bot process rather than introducing bypass credentials.
-
-Prevent bot commits from creating release loops. If generated documentation must refresh a site, account for the fact that GITHUB_TOKEN writes may not trigger ordinary push workflows. Use an explicit supported trigger, such as successful workflow_run completion of the manually launched module publication workflows AND the recovery finalizer. Watch the top-level workflows, not just a workflow_call-only helper. Require the release branch, same trusted repository and successful conclusion; check out latest release-branch metadata after finalization rather than the original source SHA. Build/verify the site including IMPORT.md, guard against stale deployment, and deploy with the required Pages permissions. Never execute untrusted pull-request code in a privileged workflow_run job. Keep a manual documentation-only retry that cannot publish packages. Validate this chain with an actual post-release documentation deployment when evidence is available; distinguish build success from deployment success.
-
-9. MAKE RECOVERY SAFE
-
-Provide the separate manual finalization action described above. It resolves the recorded source/version and hashes, verifies public artifacts using the destination adapter, skips Maven uploading, and retries documentation/tag finalization under the shared mutation lock. It can run during the automatic environment wait. If publication or another finalizer is active, it waits for that lock. The delayed automatic finalizer must safely become a no-op if manual recovery finishes first.
-
-For JitPack, reading an uncached artifact may itself request the same tagged build; document this provider behavior rather than promising that recovery can never start remote work. Do not invoke a force-rebuild/delete API or move the tag automatically.
-
-Cover:
-- Validation failure before upload.
-- Definitively rejected publication.
-- Unknown outcome after timeout or runner failure.
-- Publication still processing.
-- Some artifacts public and others missing.
-- Publication succeeded but rendering, tagging, or Git push failed.
-- Existing tags, concurrent branch changes, and branch-protection refusal.
-- Repeated finalization after a completed release.
-
-Do not clear pending state automatically when a remote publication may still succeed. Never blindly re-upload immutable coordinates.
-
-Document how a maintainer verifies a definitively failed attempt before clearing exactly its reservation. For partial releases, require reconciliation of the intended artifact set; do not treat the whole release as complete or invent an automatic rollback of public artifacts.
-
-10. VALIDATE WITHOUT A REAL RELEASE
-
-Run the documentation build and release archive verification on every pull request, including release tooling changes. Give the check a stable name and make it required for merges in the repository ruleset or branch protection. If settings access is unavailable, report that enforcement still needs to be configured. Keep PR validation read-only with respect to publishing and Pages deployment.
-
-For a versioned documentation site, test the real release exporter and site builder together. In an isolated fixture, record the same semantic version on Maven Central and JitPack from different commits. Verify separate provider-qualified URLs, the correct source and documentation revision at each URL, and the exact dependency coordinates for each provider. Keep coverage for existing plain-version archive URLs. Do not contact publication providers or write production release records in this test.
-
-Keep a selected-module CI matrix and a local verification repository. Test Central and unsigned JitPack publication configurations without remote upload or signing credentials. Add focused coverage for:
-- The same module version publishes to two providers at different commits and produces distinct immutable tags, coordinates where applicable, and archive paths.
-- Docs-only/sibling-only changes, model dependency pin changes, shared build changes, legacy identity conflicts and pending identities across destinations.
-- Latest-only installation selection, numeric ordering, equal-version same-source destinations, conflicting sources, unpublished rename notices and accurate dependency repositories.
-- A pending JitPack release blocks by default, an explicit newer version can proceed with the checkbox, and upload-started markers still block.
-- JitPack tag parsing, single-module task selection, actual consumer coordinates, queued/building retries, failed builds, API source mismatch, partial artifacts and real LFS assets.
-- Registry/dropdown drift, retired destinations and destination-appropriate environment/secret isolation.
-- Successful top-level publication/recovery triggering documentation with latest metadata, without a bot-push assumption or release loop.
-
-Test helpers with fixtures, mocked registry responses, and temporary Git repositories. Include:
-- Semantic ordering such as 0.1.9 versus 0.1.10.
-- Blank and whitespace-only first-release input selecting 0.1.0; explicit first-version overrides; no-tags bootstrap.
-- Blank subsequent input reusing the original version/source for unchanged inputs (or no-op when confirmed), incrementing the latest destination patch for changed inputs, and explicit higher patch/minor/major overrides.
-- Reused/older versions and invalid overrides rejected without bypassing provenance or pending-attempt checks.
-- Exactly one optional `version` input on each manual publishing form, forwarded correctly to the shared implementation; recovery only through the dedicated finalizer.
-- Independent module histories and preservation of sibling metadata when applicable.
-- Divergent tags and Central history.
-- Invalid versions and unresolved pending attempts.
-- Recovery resolving the original source and skipping upload.
-- Partial publication and registry timeouts.
-- Failed publication leaving committed IMPORT.md unchanged.
-- Deterministic rendering and unknown placeholders.
-- Generated POM coordinates/version and the intended publication artifacts.
-- Concurrent main changes, existing tags, and finalization failures.
-- Recovery preserving immutable versions and source provenance.
-- Automatic and manual finalization racing for the same release: one mutation and one successful no-op.
-- Manual completion during the environment wait, followed by automatic finalization.
-- A request for an older completed release while newer docs or a newer reservation exist.
-- Unknown versions, expected-source mismatches, conflicting tags, and inconsistent markers.
-- Polling success before the deadline, transient failures, timeout, partial artifacts, and hash mismatches.
-- Identical job-level lock keys across publishing and both finalization paths, with the delay outside the lock and no caller/callee lock nesting.
-- Ordinary automatic completion, manual finalization bypassing the delay, and failed/cancelled publication dependency conditions.
-
-Run relevant Gradle checks and validate workflow YAML, expressions, shell scripts, and permissions as practical. Keep credentials out of ordinary CI. Report checks that cannot run in the available environment.
-
-11. OWNER SETUP EXPERIENCE
-
-Use the [terminal setup wizard supplement](setup-wizards.md) for shared interaction, confirmation, and recovery guidance. The Android-specific credential rules below take precedence.
-
-When implementing publishing tooling, provide or adapt a cross-platform Python terminal wizard, such as `scripts/setup_github_environments.py`, with a pinned dependency file. It must ask the owner for a masked GitHub token; do not assume an authenticated `gh` session or a token stored in the checkout. Default to the target repository and support an explicit `--repo owner/name` override. Explain the required token permissions and the distinction between this temporary setup token, Central credentials and Actions' automatic `GITHUB_TOKEN`. Never persist or log the setup token.
-
-Read enabled destination environments/settings from the same registry, plus any required workflow-only environments. Enumerate environments independently of their setting lists so secret-free `jitpack` and `delayed-docs` environments are still inspected, reviewed and created. New `delayed-docs` environments should receive the 15-minute timer when supported, after review. Do not replace existing environments or reset their protection rules/timers; report any existing missing or different timer for owner reconciliation. Report plan/visibility limitations rather than claiming that a YAML environment reference configured a timer.
-
-Mask secrets, show existing nonsecret defaults, preserve existing values on blank input, reject missing required values, preserve multiline signing-key files, and present a concrete review before writes. Skip unnecessary environment creation and unchanged variable writes; existing secrets cannot be read back, so blank means keep rather than pretending to compare plaintext hashes. Encrypt secrets through GitHub's environment public-key API, reject unsafe credential redirects, sanitize errors/logs, and report partial/uncertain writes for safe reruns. Do not request Maven credentials for public JitPack.
-
-Test missing and existing environments, the empty JitPack environment, timer creation and protection retention, pagination, encrypted multiline secrets, blank-input preservation, cancellation before writes, and partial/network failures without exposing secrets. Offline UI tests must synchronize with widget state or disable cosmetic animation timing rather than rely on runner speed; include Linux and Windows coverage for the cross-platform helper. Document exact installation and launch commands. Adding the wizard does not authorize using real credentials or changing live settings during implementation.
-
-DELIVERABLES
-
-Provide the working workflows, canonical destination registry and generated dropdowns, build configuration, helpers, focused tests, installation template/reference, documentation-deployment integration, release runbook, and Python GitHub environment setup wizard with its dependencies and launch commands.
-
-Include a destination-specific owner setup checklist. Public JitPack needs no access token, custom endpoint or signing key; explain any empty GitHub environment and optional protections. Only when Central is enabled: create maven-central with the four documented secret names; create delayed-docs with a 15-minute wait timer, no secrets, and no required reviewers if automatic continuation is intended; allow the release branch where deployment restrictions apply. Verify current GitHub plan/repository-visibility support for wait timers and report limitations. Merely referencing an environment does not configure its timer. Document existing bot contents/tag permissions and branch-protection requirements without requesting bypass tokens. Explicitly distinguish owner setup that remains unverified from settings actually inspected.
-
-The runbook must show the single optional version field alongside the destination selector, blank-input first/subsequent examples including unchanged-source reuse/no-op and changed-input patch allocation, explicit-version overrides, and the separate recovery action. It must explain first-time setup, ordinary release, version policy, exact source selection, artifact set, publication success criteria, installation generation, protected-branch handling, site updates, and failure recovery.
-
-Finish with a concise report listing changes, validation results, required GitHub/destination setup, actual verified publication/build evidence, limitations, and commit or PR links. State explicitly that no real release was performed unless separately authorized and actually completed.
+Deliver declarative configuration, maintained launchers/workflows, compatible Gradle contracts, focused domain tests, confirmed installation/history handling and a release/recovery runbook with exact commands. Remove superseded unused scripts and README-only script folders after checking all callers. Report CLI and Gradle plugin pins separately, checks actually run, required owner/upstream work and the PR link. State that no real release or deployment occurred unless separately authorized and actually performed.
