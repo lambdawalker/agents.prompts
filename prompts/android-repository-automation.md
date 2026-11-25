@@ -57,13 +57,19 @@ Verify both `/` and the actual GitHub Pages project prefix with `--base` as supp
 
 Keep docs validation, artifact creation and deployment distinct. Documentation-only retry never allocates a library release or uploads an artifact. Preserve artifact-only pipelines and existing hosting authorization; do not enable Pages deployment simply to make a build ready.
 
+## Keep the component demo in the build
+
+Apply the [required Android demo app contract](libraries/android.md#every-component-repository-needs-a-runnable-demo-app), including the shared catalog and top App settings button, during repository setup and alignment. Discover the demo as an Android application, alongside the publishable library modules; an exclusion from Maven/JitPack publication must not exclude its build and verification. Preserve the normal demo-to-library project dependencies and keep demo-only dependencies out of published library metadata.
+
+Configure the supported shared application conventions and generated CI checks to assemble the demo and compile its relevant test/preview source sets. Retain focused catalog/settings navigation checks and document actual install/launch tasks and required public backend configuration. Use the pinned tool's supported schema; if a needed demo check is not expressible, retain a focused check and report the upstream gap instead of claiming the generated workflow covers it. Do not create another setup or release engine.
+
 ## Verify modules and evidence honestly
 
 Configure per-module publication contracts explicitly: package prefix, API/runtime dependencies, bytecode target, packaged assets and exclusions. Avoid inheriting another library's verifier defaults. Preserve immutable model/source pins, required downloaded assets and independent core/model versions. Runtime dependencies must use real compatible published pins during publication, while demos may retain project dependencies.
 
 For JVM-only modules use `kind: jvm-library` in the existing `android_modules` schema and `packaging: jar`, with explicit JVM/bytecode/dependency checks. Keep the JVM Maven task/property integration and real upload guards/receipt capture. Check whether the chosen Gradle plugin supports JVM; the Android publication plugin must not be applied blindly. Validate JAR/POM/sources/javadoc/module metadata and API/runtime variants. Reuse the shared release engine instead of inventing another journal format. JVM-only workflows need no Android SDK, APK signing or screenshot jobs. Mixed builds dispatch checks per selected module.
 
-Use generic project-check inventories and localization checks where supported, retaining domain tests. Candidate screenshot manifests and matching hashes are evidence of rendering/provenance, not maintainer approval. Keep candidate generation, baseline acceptance and regression comparison separate. Never auto-accept changed images or source hashes to silence CI. Headless libraries need no invented UI; emulator/host images do not prove physical hardware, biometric or camera behavior.
+Use generic project-check inventories and localization checks where supported, retaining domain tests. Candidate screenshot manifests and matching hashes are evidence of rendering/provenance, not maintainer approval. Keep candidate generation, baseline acceptance and regression comparison separate. Never auto-accept changed images or source hashes to silence CI. Headless libraries need no invented library UI; required Android demo UI still needs coverage. Emulator/host images do not prove physical hardware, biometric or camera behavior.
 
 Use the shared signing/vault workflow and compatible application conventions. Keep APK signing separate from Maven OpenPGP signing. Missing local signing material should produce actionable verification and preserve normal project sync; do not silently rotate signing identity. Never commit keys, vaults, passwords or local signing properties. Retain the shared tool's existing user-owned secret storage rather than introducing a parallel `.deploy/` vault for an Android library.
 

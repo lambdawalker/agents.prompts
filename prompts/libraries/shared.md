@@ -32,6 +32,8 @@ Use actual rendered components or demos, inspect the result, and record source/s
 
 Nonvisual libraries do not need a fabricated UI or screenshot suite. Use real demo output, API examples, or an exact diagram only where these explain something useful. Keep essential setup and contracts in text. Preserve one curated image set and validate hashes/dimensions and required assets before publishing. Full screenshot policy remains in the selected primary workflow.
 
+For Android components, that exemption concerns the library's own UI only: the [Android section](android.md#every-component-repository-needs-a-runnable-demo-app) requires an installable demo host with a catalog and top App settings button, whose actual UI must be covered.
+
 ## Deployment questions, defaults and countdowns
 
 Apply these rules whenever a library owns deployment tooling, regardless of implementation language. Follow the selected technology's rules for interface-specific defaults, timing and approval. [Go + AWS deployments](go-aws-common.md#interactive-defaults-and-countdowns) use Infra Composer's terminal and browser behavior.
