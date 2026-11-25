@@ -84,13 +84,15 @@ During publishing, keep links between agent guides pointing to raw .md URLs, inc
 
 Use existing runnable demo applications when sufficient; add focused examples only for meaningful coverage gaps. Each catalog entry must name the demonstrated feature, prerequisites, exact run command or navigation route, actions to try, expected result, important failure/recovery paths, and full source location.
 
+For Android component repositories, an installable demo app is required, including for a component without its own UI. Implement or repair the [Android demo app contract](libraries/android.md#every-component-repository-needs-a-runnable-demo-app): a real library consumer, shared launcher catalog, and visible App settings action at the top. Document and validate the actual host; previews, a parent product app or prose snippets do not replace it. The system-integrated workflow inherits this requirement too.
+
 Compile or execute the relevant demos. Extract site snippets from named regions in runnable examples where practical, or provide another repeatable drift check. Keep illustrative fixtures distinct from production-ready integrations. For versioned docs, pin demo/source links to that release tag or commit; label main-branch examples as development examples.
 
 6. IMPLEMENT REPRODUCIBLE SCREENSHOTS WHEN THEY HELP
 
 For UI projects, capture actual rendered components or runnable demos. For nonvisual libraries, skip screenshots unless a real visualization or demo improves understanding; document that decision. Never manufacture a UI screenshot with image generation or manual redrawing.
 
-For Android UI projects, always generate and maintain the executable screenshot test suite and previews for every library/demo composable described in the [Android section](libraries/android.md). A preview annotation alone is not a screenshot test; headless projects need no invented UI.
+For Android UI projects, always generate and maintain the executable screenshot test suite and previews for every library/demo composable described in the [Android section](libraries/android.md). A preview annotation alone is not a screenshot test. Headless libraries need no invented library UI; the required Android demo host still needs coverage.
 
 Choose the existing platform-appropriate renderer where possible. Android Compose previews can document deterministic library-owned UI. Emulator/device instrumentation is needed for actual system UI and platform interactions. Static preview images do not prove permission dialogs, navigation, camera hardware, lifecycle transitions, or other platform behavior.
 

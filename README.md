@@ -21,6 +21,8 @@ Choose a library section and pair it with the appropriate primary workflow. Ever
 
 [Shared library rules](prompts/libraries/shared.md) apply to every section: latest confirmed stable release on entry, coherent navigation across versions, useful reviewed screenshots, and pushed branches with pull requests by default. Version-specific content may differ. Android UI libraries must also have a screenshot test suite and previews for every library/demo composable.
 
+Every Android component repository must include a runnable demo app, even when the component has no UI. The [Android demo contract](prompts/libraries/android.md#every-component-repository-needs-a-runnable-demo-app) requires a real consumer of the local library, a shared demo catalog, and a visible **App settings** button at the top that opens Android's settings for the installed demo package. These requirements apply to standalone and system-integrated repositories and are retained by setup and publishing automation.
+
 ## Go + AWS repository design and alignment
 
 | Prompt | Responsibility |
