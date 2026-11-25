@@ -34,7 +34,7 @@ Nonvisual libraries do not need a fabricated UI or screenshot suite. Use real de
 
 ## Deployment questions, defaults and countdowns
 
-Apply these rules whenever a library owns deployment tooling, regardless of implementation language. Follow the selected technology's rules for interface-specific defaults, timing and approval. [Go + AWS deployments](go-aws.md#interactive-defaults-and-countdowns) use Infra Composer's terminal and browser behavior.
+Apply these rules whenever a library owns deployment tooling, regardless of implementation language. Follow the selected technology's rules for interface-specific defaults, timing and approval. [Go + AWS deployments](go-aws-common.md#interactive-defaults-and-countdowns) use Infra Composer's terminal and browser behavior.
 
 - Unless the selected technology defines a different entry flow, a plain interactive deployment-script invocation defaults to **deploy**. Complete prerequisites and build, produce a successful preview/plan, then offer apply confirmation for that plan. Provide an explicit preview-only action. Explicit build/status/setup/preview actions must never escalate to deployment. Noninteractive/CI execution still requires explicit deployment intent and approval.
 

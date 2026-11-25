@@ -1,6 +1,6 @@
 # agents.prompts
 
-Reusable prompts for AI coding agents. Choose one of the two primary documentation workflows.
+Reusable prompts for AI coding agents. For Go/AWS repository design, implementation or alignment, use the role entry points below. For documentation-focused work, choose one of the two primary documentation workflows.
 
 | Primary prompt | Use it for |
 | --- | --- |
@@ -15,11 +15,42 @@ Choose a library section and pair it with the appropriate primary workflow. Ever
 | --- | --- | --- |
 | [Android libraries](prompts/libraries/android.md) | Standalone workflow + Android rules | System-integrated workflow + Android rules |
 | [Kotlin libraries](prompts/libraries/kotlin.md) | Standalone workflow + Kotlin rules | System-integrated workflow + Kotlin rules |
-| [Go + AWS libraries](prompts/libraries/go-aws.md) | Standalone workflow + Go/AWS rules | System-integrated workflow + Go/AWS rules |
+| [Go + AWS features](prompts/libraries/go-aws-feature.md) | Standalone workflow + feature/common rules | System-integrated workflow + feature/common rules |
 | [Python libraries](prompts/libraries/python.md) | Standalone workflow + Python rules | System-integrated workflow + Python rules |
 | [Node.js libraries](prompts/libraries/node.md) | Standalone workflow + Node.js rules | System-integrated workflow + Node.js rules |
 
 [Shared library rules](prompts/libraries/shared.md) apply to every section: latest confirmed stable release on entry, coherent navigation across versions, useful reviewed screenshots, and pushed branches with pull requests by default. Version-specific content may differ. Android UI libraries must also have a screenshot test suite and previews for every library/demo composable.
+
+## Go + AWS repository design and alignment
+
+| Prompt | Responsibility |
+| --- | --- |
+| [Feature repositories](prompts/libraries/go-aws-feature.md) | Reusable runtime, Composer infrastructure module and isolated test app. |
+| [Composed applications](prompts/libraries/go-aws-application.md) | Host composition, shared resources, environment orchestration and aggregated reporting. |
+| [Common requirements](prompts/libraries/go-aws-common.md) | Execution/evidence contract, shared deployment tooling, migration, readiness and Go/AWS operations. Both roles load this file. |
+
+These prompts work without selecting a documentation-only workflow first. Each role links the appropriate documentation workflow when needed. Generic [shared library rules](prompts/libraries/shared.md) remain cross-language policy, not a second copy of the AWS specification. The old [go-aws.md](prompts/libraries/go-aws.md) URL routes to the new roles.
+
+```text
+Use https://github.com/lambdawalker/agents.prompts/blob/main/prompts/libraries/go-aws-feature.md
+and its linked common requirements to DESIGN [TARGET_REPOSITORY_URL].
+Record approved requirements, proposed defaults and open decisions separately.
+Deliver the design, diagrams, artifact inventory and acceptance plan in a PR.
+Do not implement runtime code or deploy infrastructure yet.
+```
+
+For a composed app, substitute `go-aws-application.md` and supply known feature/parent repositories. To fix an existing repo:
+
+```text
+Use https://github.com/lambdawalker/agents.prompts/blob/main/prompts/libraries/go-aws-application.md
+and its linked common requirements to ALIGN [TARGET_REPOSITORY_URL].
+Inspect current code, guidance, deployment tooling, tests and open PRs.
+Audit every applicable requirement, implement the gaps and validate locally.
+Preserve existing deployment identities and secrets. Push a branch and open a PR.
+Do not deploy, change live account configuration or merge.
+```
+
+Use IMPLEMENT to build an agreed design, citing its specification. Use audit-only explicitly when findings without fixes are desired. Reference repos are examples, not compliance authorities.
 
 ## Specialist supplements
 

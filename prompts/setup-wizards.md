@@ -6,7 +6,7 @@ the target's publishing or infrastructure rules when those apply.
 
 For Android repositories, apply [Shared Android repository automation](android-repository-automation.md): reuse the Rust setup wizard, generated launchers and existing vault. Do not interpret this generic wizard prompt as a request to create another Python implementation.
 
-For deployable Go + AWS repositories, follow the [Go + AWS wizard rules](libraries/go-aws.md#deployment-wizard-requirements-for-deployable-go--aws-projects) for the shared Infra Composer CLI, terminal and browser approval flows, and deployment record and vault locations.
+For deployable Go + AWS repositories, follow the [Go + AWS wizard rules](libraries/go-aws-common.md#deployment-wizard-requirements-for-deployable-go--aws-projects) for the shared Infra Composer CLI, terminal and browser approval flows, and deployment record and vault locations.
 
 ## Inspect and define the scope
 
