@@ -14,11 +14,11 @@ semantics with the project's tooling.
 | Place | Contents and behavior |
 | --- | --- |
 | Browser tab | Use `Setup: <repository>` or `Deploy: <repository>` for the wizard's purpose. Use a bundled favicon. |
-| Header | Put the main menu and opened-target tabs on the left. Put the GitHub link, displayed as `/owner/repository` when applicable, and the System/Light/Dark control on the right. Use the menu for New/Open target and explicitly scoped project-wide operations. Creating a draft or switching tabs selects a target. It never runs setup or deploy. Switch between operations or protect the active run from retargeting. |
+| Header | Put the main menu and opened-target tabs on the left. Put the GitHub link, displayed as `/owner/repository` when applicable, and the System/Light/Dark control on the right. Use the menu for New/Open target and explicitly scoped project-wide operations. Creating a draft or switching tabs selects a target. It never runs setup or deploy. Keep an active run bound to its original target across tab switches, and block conflicting work until that run releases its locks. |
 | Left pane | Show phased progress with the current stage and its substeps. Keep project/target context available as a separate view in the same column. Support collapsing progress and switching context from the pane's side controls. |
-| Center workspace | Provide **Actions**, **Settings**, **Overview**, and **Process output** tabs. Show supported actions as cards with their consequences. Prefer a read-only preview as the initial deploy-wizard selection when available. Keep safe settings and the available actions visible from startup. Enable submission only in the relevant step. Make actionable fields editable and show validation near each field. Keep nonsecret edits after failed checks. Retain the saved target and inventory in Overview while a new plan runs. |
+| Center workspace | Provide **Actions**, **Settings**, **Overview**, and **Process output** tabs. Show supported actions as cards with their consequences. Prefer Preview as the initial deploy-wizard selection when available. Preview must not apply deployment changes; disclose any prerequisite or state-bootstrap writes and their approvals before starting them. A pending bootstrap choice must not advance on a timer. Keep safe settings and the available actions visible from startup. Enable submission only in the relevant step. Make actionable fields editable and show validation near each field. Keep nonsecret edits after failed checks. Retain the saved target and inventory in Overview while a new plan runs. |
 | Right pane | When artifacts exist, show a searchable hierarchy and a separate selected-artifact details panel. Selecting a proposed change or related artifact reveals its details. Keep the tree, details, and other visual views synchronized. |
-| Fixed action bar and dialogs | Keep the active action and its controls in view when content scrolls. Put eligible countdowns on **Continue**, with **Pause** beside it. Pause on deliberate interaction or when leaving the tab. Use blocking dialogs for vault creation/unlock, provider sign-in and short consequential confirmations. Reserve **Close wizard** for ending the session. |
+| Fixed action bar and dialogs | Keep the active action and its controls in view when content scrolls. Put eligible countdowns on **Continue**, with **Pause** beside it. Pause on deliberate interaction or when leaving the tab; keep the timer stopped until the operator explicitly resumes or submits. An action-menu timer may select Preview only where the project policy allows; it never approves Apply. Use blocking dialogs for vault creation/unlock, provider sign-in and short consequential confirmations. Reserve **Close wizard** for ending the session, and state what happens to an active operation before closing. |
 
 - Follow the reference's compact workspace, restrained borders and status
   colors, and clear separation between navigation, detail panels, and buttons.
@@ -33,22 +33,29 @@ semantics with the project's tooling.
   browser-open path when automatic opening is unavailable. Keep the local
   wizard separate from the website or backend it deploys.
 - Serve the local workspace on loopback with an available port and a private
-  session credential. Keep the credential out of logs, ordinary request URLs,
-  referrers, and reusable records. Validate the host, origin and session on
-  requests, and check the current action, prompt and target on the server.
-  Serve app assets locally with a restrictive content policy. Renderer requests
-  select declared actions and submit typed fields. The server owns command
-  selection, credential access, execution, and redaction. A remotely hosted
-  control plane requires its own authentication and authorization design.
-- Render saved credentials as masked placeholders and preserve them when a
-  replacement field is left blank. Keep plaintext saved credentials out of
-  the browser. Lock idle sessions according to the project policy and
-  resume the same step after unlock. Require explicit approval for apply.
+  credential scoped to this wizard instance. Bootstrap the browser with a
+  one-time local handoff that removes any launch secret before it can enter
+  ordinary request URLs, persistent history, referrers, or logs. Reject
+  mismatched Host and cross-origin requests; require the session and CSRF
+  protection for state-changing requests. Check the current action, prompt and
+  target on the server. Serve app assets locally with a restrictive content
+  policy. Renderer requests select declared actions and submit typed fields.
+  The server owns command selection, credential access, execution, and
+  redaction. Render provider data and process output as escaped text. A
+  remotely hosted control plane requires its own authentication and
+  authorization design.
+- Render saved credentials as masked placeholders, never as replacement field
+  values. A blank replacement preserves the saved value. Keep plaintext saved
+  credentials out of the browser. Lock idle sessions on the server according
+  to the project policy, reject new mutations until unlock, and resume the
+  same step afterward. An already-running operation may finish while locked.
+  Revoke the session when the wizard closes. Require explicit approval for apply.
 - After completion, failure, or stop, keep a reviewable result and a route
-  back to Actions in the same session. Distinguish a request to stop from
-  confirmed completion or cancellation. Offer copyable sanitized diagnostics
-  and show confirmed outputs. The process log must not expose raw state,
-  command arguments containing secrets, or provider sign-in transcripts.
+  back to Actions in the same session. Report a stop request as pending until
+  the operation terminates; show any partial writes and its confirmed outcome
+  before releasing its locks. Offer copyable sanitized diagnostics and show
+  confirmed outputs. The process log must not expose raw state, command
+  arguments containing secrets, or provider sign-in transcripts.
 
 ## Show only evidence the operation can produce
 
@@ -61,7 +68,7 @@ semantics with the project's tooling.
 
 For setup-only workflows, the artifacts may be generated files, configured
 destinations or verified build outputs. Leave unsupported features out of the
-workspace and mark missing evidence honestly.
+workspace and label expected but unavailable evidence as unknown.
 
 ## Verify the browser interface
 
