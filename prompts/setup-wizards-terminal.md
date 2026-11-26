@@ -37,12 +37,13 @@ the [browser wizard prompt](setup-wizards-browser.md) for the local site.
   `NO_COLOR`, and supported Windows console behavior. Restore the terminal
   after success, failure, and cancellation.
 - Use explicit action labels such as **Apply changes**, **Overwrite
-  workflows**, and **Keep existing**. For destructive actions, overwriting
-  existing workflows, and other operations whose project policy requires
-  deliberate consent, start with an unchecked acknowledgment and enable the
-  action only after it is checked. Changing the selected target clears the
-  acknowledgment. Follow the project's countdown rule for eligible routine
-  deployment approval without adding an acknowledgment requirement. Reserve
+  workflows**, and **Keep existing**. Where project policy calls for a
+  checkbox acknowledgment, such as before overwriting existing workflows,
+  start unchecked and enable the action only after it is checked. Changing the
+  target clears prior acknowledgment. For destructive actions, use the
+  project's required deliberate confirmation, including a typed target where
+  specified, without a timer. Follow the project's countdown rule for eligible
+  routine deployment approval without adding an acknowledgment requirement. Reserve
   **Close** for the result and show whether changes were applied, skipped, or
   failed. Show 100% only after the operation succeeds.
 
