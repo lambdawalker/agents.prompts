@@ -63,7 +63,9 @@ Use IMPLEMENT to build an agreed design, citing its specification. Use audit-onl
 | [Shared Android repository automation](prompts/android-repository-automation.md) | Pinned setup/docs CLIs, generated launchers, evaluated module discovery, shared Astro sites, Android/JVM contracts and removal of superseded local scripts. |
 | [Android library publishing](prompts/android-library-publishing.md) | CLI-owned Maven Central/JitPack publication, shared module version/source identities with destination-specific journals, recoverable releases and confirmed IMPORT.md; separately retryable documentation builds/deployment. |
 | [Python package publishing](prompts/python-package-publishing.md) | Release Please version/changelog PRs, validated wheel and sdist builds, PyPI Trusted Publishing, and recovery/setup guidance. |
-| [Terminal setup and deployment wizards](prompts/setup-wizards.md) | First-run and repeat setup, prompt defaults, secure vaults, confirmation screens, workflow previews, and recovery. |
+| [Setup and deployment wizards](prompts/setup-wizards.md) | Shared workflow, vault, and approval rules for Android, iOS, web, and infrastructure tools. |
+| [Terminal wizard](prompts/setup-wizards-terminal.md) | Task menus, saved defaults, countdowns, confirmation screens, and console behavior. |
+| [Browser wizard](prompts/setup-wizards-browser.md) | Local wizard site, workspace layout, private sessions, plan review, and artifact views. |
 
 The former [Multi-repository documentation](prompts/multi-repository-documentation.md) entry redirects to the system-integrated workflow. Its ownership, branch consolidation, and release safeguards have been retained there.
 
