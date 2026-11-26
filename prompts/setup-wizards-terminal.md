@@ -6,14 +6,15 @@ the [browser wizard prompt](setup-wizards-browser.md) for the local site.
 
 ## Make the next action obvious
 
-- Use a checkbox menu for independent operations. Preselect all applicable
-  operations for a genuine first run. On later runs start with an empty
-  selection and enable **Setup** after at least one choice. Use durable
-  setup evidence to detect a returning run. A missing generated file alone
-  should not reselect every operation.
-- Provide **What will this do?** using the current selection. Explain
-  dependencies, such as the need for a verified local signing key before
-  configuring its deployment environment.
+- For independent setup operations, use a checkbox menu. Preselect applicable
+  setup operations on a genuine first run. On later runs start with an empty
+  setup selection and enable **Setup** after at least one choice. Use durable
+  setup evidence to detect a returning run; a missing generated file alone
+  should not reselect every operation. Apply the project's separate action
+  defaults to Deploy, Preview, and other operations.
+- Provide **What will this do?** for the current action or setup selection.
+  Explain dependencies, such as the need for a verified local signing key
+  before configuring its deployment environment.
 - Show the current action, target, effective value, and default or override.
   Keep passphrases masked and make text fields visually distinct from the panel.
 - For non-sensitive prompts with a safe default, show a visible countdown.
@@ -36,9 +37,12 @@ the [browser wizard prompt](setup-wizards-browser.md) for the local site.
   `NO_COLOR`, and supported Windows console behavior. Restore the terminal
   after success, failure, and cancellation.
 - Use explicit action labels such as **Apply changes**, **Overwrite
-  workflows**, and **Keep existing**. For consequential operations, start
-  with an unchecked acknowledgment and enable the action only after it is
-  checked. Changing the selected target clears the acknowledgment. Reserve
+  workflows**, and **Keep existing**. For destructive actions, overwriting
+  existing workflows, and other operations whose project policy requires
+  deliberate consent, start with an unchecked acknowledgment and enable the
+  action only after it is checked. Changing the selected target clears the
+  acknowledgment. Follow the project's countdown rule for eligible routine
+  deployment approval without adding an acknowledgment requirement. Reserve
   **Close** for the result and show whether changes were applied, skipped, or
   failed. Show 100% only after the operation succeeds.
 
