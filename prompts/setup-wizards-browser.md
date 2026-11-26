@@ -36,8 +36,8 @@ semantics with the project's tooling.
   credential scoped to this wizard instance. Bootstrap the browser with a
   one-time local handoff that removes any launch secret before it can enter
   ordinary request URLs, persistent history, referrers, or logs. Reject
-  mismatched Host and cross-origin requests; require the session and CSRF
-  protection for state-changing requests. Check the current action, prompt and
+  mismatched Host values and cross-origin API requests; require the session
+  and CSRF protection for state-changing requests. Check the current action, prompt and
   target on the server. Serve app assets locally with a restrictive content
   policy. Renderer requests select declared actions and submit typed fields.
   The server owns command selection, credential access, execution, and
@@ -47,9 +47,10 @@ semantics with the project's tooling.
 - Render saved credentials as masked placeholders, never as replacement field
   values. A blank replacement preserves the saved value. Keep plaintext saved
   credentials out of the browser. Lock idle sessions on the server according
-  to the project policy, reject new mutations until unlock, and resume the
-  same step afterward. An already-running operation may finish while locked.
-  Revoke the session when the wizard closes. Require explicit approval for apply.
+  to the project policy, reject new operation mutations until unlock, and
+  resume the same step afterward. An already-running operation may finish
+  while locked. Revoke the session on explicit Close and expire abandoned
+  sessions. Require explicit approval for apply.
 - After completion, failure, or stop, keep a reviewable result and a route
   back to Actions in the same session. Report a stop request as pending until
   the operation terminates; show any partial writes and its confirmed outcome
