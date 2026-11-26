@@ -63,7 +63,7 @@ owns each operation and its state, even when one workspace exposes them together
   where safe. Save accepted, validated reusable answers without marking an
   operation complete prematurely.
 
-## Terminal wizard
+## Terminal setup and deployment wizards
 
 ### Make the next action obvious
 
