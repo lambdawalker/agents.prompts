@@ -87,8 +87,8 @@ including its workspace layout, session, controls, and evidence views.
   use a user-owned secrets directory outside the checkout.
 - Use authenticated encryption and a supported password KDF. Write vault
   updates atomically and serialize concurrent writers. Never change the
-  permissions of an existing directory the tool does not own. Keep secrets
-  out of logs, diffs, process arguments, repository files, and screenshots.
+  permissions of an existing directory the tool does not own. Keep plaintext
+  secrets out of logs, diffs, process arguments, tracked files, and screenshots.
 - When creating a needed vault for the first time, capture and confirm its
   unlock passphrase explicitly. Unlock an existing vault without replacing
   its passphrase. Keep provider-managed sign-in caches in their normal storage.
