@@ -6,6 +6,9 @@ the terminal and a local browser workspace. Pair it with the target's
 repository, signing, publishing, and infrastructure rules. Follow their
 tooling, timing, approval, and storage policies where they are more specific.
 
+Read this shared prompt first, then load the interface prompt for the work in
+scope. Load both when the project provides both interfaces.
+
 | Project | Execution and platform-specific work |
 | --- | --- |
 | Android | Apply [Shared Android repository automation](android-repository-automation.md). Reuse the Rust `android-repo-setup` CLI, generated launchers, and existing vault. Keep module and variant discovery, Gradle, SDK/JDK checks, signing, and publishing in their existing tools. Add reusable browser support to the shared tool when that work is in scope. |
@@ -62,96 +65,13 @@ owns each operation and its state, even when one workspace exposes them together
 
 ### Make the next action obvious
 
-- Use a checkbox menu for independent operations. Preselect all applicable
-  operations for a genuine first run. On later runs start with an empty
-  selection and enable **Setup** after at least one choice. Use durable
-  setup evidence to detect a returning run. A missing generated file alone
-  should not reselect every operation.
-- Provide **What will this do?** using the current selection. Explain
-  dependencies, such as the need for a verified local signing key before
-  configuring its deployment environment.
-- Show the current action, target, effective value, and default or override.
-  Keep passphrases masked and make text fields visually distinct from the panel.
-- For non-sensitive prompts with a safe default, show a visible countdown.
-  Say exactly what happens on expiry. Enter accepts the displayed default.
-  Stop the timer on deliberate editing, paste, clicks or selection changes.
-  Mouse movement and terminal resize must never type text or submit an answer.
-  Password entry, unresolved required inputs, and destructive confirmations
-  have no timer. Use the project policy for other approval prompts and timer
-  durations. For deployment tooling without an override, follow the
-  [shared deployment defaults](libraries/shared.md#deployment-questions-defaults-and-countdowns).
-  Reset timers and widget state when changing screens. EOF, interruption and
-  input errors cancel pending decisions.
-- Put long diffs or notes in their own scroll area. Keep the checkbox and
-  action buttons visible and reachable on compact terminals. At every screen
-  transition, set visibility and enabled state explicitly. A prior step can
-  hide a button reused by the next step.
-- Keep long-running work off the input/render loop and discard stale results.
-  Update countdowns in place. Keep redirected output and CI logs readable
-  without animation or escape sequences. Respect terminal capabilities,
-  `NO_COLOR`, and supported Windows console behavior. Restore the terminal
-  after success, failure, and cancellation.
-- Use explicit action labels such as **Apply changes**, **Overwrite
-  workflows**, and **Keep existing**. For consequential operations, start
-  with an unchecked acknowledgment and enable the action only after it is
-  checked. Changing the selected target clears the acknowledgment. Reserve
-  **Close** for the result and show whether changes were applied, skipped, or
-  failed. Show 100% only after the operation succeeds.
+Use the [terminal wizard prompt](setup-wizards-terminal.md) for task selection,
+defaults, countdowns, confirmation, and terminal presentation.
 
 ## Browser wizard
 
-Use the [Infra Composer browser wizard](https://github.com/lambdawalker/go.infra.composer/tree/a613f7d7d078a5e3d05366d33b284430c06766ad/deploycli/internal/wizardweb/ui)
-as the interaction and layout reference. Reuse the existing browser where
-compatible. For other engines, implement the same workspace and action
-semantics with the project's tooling.
-
-| Place | Contents and behavior |
-| --- | --- |
-| Browser tab | Use `Setup: <repository>` or `Deploy: <repository>` for the wizard's purpose. Use a bundled favicon. |
-| Header | Put the main menu and opened-target tabs on the left. Put the GitHub link, displayed as `/owner/repository` when applicable, and the System/Light/Dark control on the right. Use the menu for New/Open target and explicitly scoped project-wide operations. Creating a draft or switching tabs selects a target. It never runs setup or deploy. Switch between operations or protect the active run from retargeting. |
-| Left pane | Show phased progress with the current stage and its substeps. Keep project/target context available as a separate view in the same column. Support collapsing progress and switching context from the pane's side controls. |
-| Center workspace | Provide **Actions**, **Settings**, **Overview**, and **Process output** tabs. Show supported actions as cards with their consequences. Prefer a read-only preview as the initial deploy-wizard selection when available. Keep safe settings and the available actions visible from startup. Enable submission only in the relevant step. Make actionable fields editable and show validation near each field. Keep nonsecret edits after failed checks. Retain the saved target and inventory in Overview while a new plan runs. |
-| Right pane | When artifacts exist, show a searchable hierarchy and a separate selected-artifact details panel. Selecting a proposed change or related artifact reveals its details. Keep the tree, details, and other visual views synchronized. |
-| Fixed action bar and dialogs | Keep the active action and its controls in view when content scrolls. Put eligible countdowns on **Continue**, with **Pause** beside it. Pause on deliberate interaction or when leaving the tab. Use blocking dialogs for vault creation/unlock, provider sign-in and short consequential confirmations. Reserve **Close wizard** for ending the session. |
-
-- Follow the reference's compact workspace, restrained borders and status
-  colors, and clear separation between navigation, detail panels, and buttons.
-  Keep panels resizable where space allows and stack the panes at narrow
-  widths. Keep tabs keyboard-accessible, provide a keyboard equivalent if
-  drag reordering is offered, and make focus visible. Use status text alongside
-  color, and keep controls reachable when the log or artifact tree scrolls.
-- Have the existing local launcher offer terminal or browser on supported
-  desktops. Preserve documented entry points and offer explicit terminal,
-  browser, and browser-without-auto-open modes. Keep headless/SSH defaults and
-  noninteractive CI terminal-based. Give the operator a manual sign-in or
-  browser-open path when automatic opening is unavailable. Keep the local
-  wizard separate from the website or backend it deploys.
-- Serve the local workspace on loopback with an available port and a private
-  session credential. Keep the credential out of logs, ordinary request URLs,
-  referrers, and reusable records. Validate the host, origin and session on
-  requests, and check the current action, prompt and target on the server.
-  Serve app assets locally with a restrictive content policy. Renderer requests
-  select declared actions and submit typed fields. The server owns command
-  selection, credential access, execution, and redaction. A remotely hosted
-  control plane requires its own authentication and authorization design.
-- After completion, failure, or stop, keep a reviewable result and a route
-  back to Actions in the same session. Distinguish a request to stop from
-  confirmed completion or cancellation. Offer copyable sanitized diagnostics
-  and show confirmed outputs. The process log must not expose raw state,
-  command arguments containing secrets, or provider sign-in transcripts.
-
-### Show only evidence the operation can produce
-
-| Capability | Presentation when supported |
-| --- | --- |
-| Preview and apply | Show the exact scope, proposed changes, and any decision still needed. Put deletes and replacements first. Show safe before/after values and replacement reasons when reported. Label fallback file diffs or deployment previews according to their actual guarantees. |
-| Inventory and ownership | Distinguish recorded state, proposed artifacts, and live checks. Give each artifact a type, short purpose, stable identity and owner when known. Keep the owning component label distinct from the source repository. Where an importable component and its demo host share a repository, use labels such as `email-verification` and `host-app`. Owner filters apply to both the tree and proposed changes, with clearly scoped counts. |
-| Dependencies and topology | Show **Depends on** and **Used by** from recorded links and navigate to those artifacts. Offer topology only when there are actual relationships to draw. Keep a usable list or tree without WebGL. |
-| History and drift | Show verified receipts or reports for the selected target, including the latest success and failed attempt, revision, outcome and a safe report download. If the provider supports a read-only drift check, show its timestamp and which resources changed, are missing or could not be verified. A drift check never applies changes. |
-
-For setup-only workflows, the artifacts may be generated files, configured
-destinations or verified build outputs. Leave unsupported features out of the
-workspace and mark missing evidence honestly.
+Use the [browser wizard prompt](setup-wizards-browser.md) for the local site,
+including its workspace layout, session, controls, and evidence views.
 
 ## Protect credentials and signing material
 
@@ -165,15 +85,12 @@ workspace and mark missing evidence honestly.
   permissions of an existing directory the tool does not own. Keep secrets
   out of logs, diffs, process arguments, repository files, and screenshots.
 - On first use, create and confirm the unlock passphrase explicitly. Use the
-  project's existing storage location and migration rules. In the browser,
-  show masked placeholders for saved values, retain them on blank replacement,
-  and never expose plaintext saved credentials through the browser. Lock idle sessions using
-  the project policy and resume the same step after successful unlock. Keep
+  project's existing storage location and migration rules. Keep
   provider-managed sign-in caches in their normal storage.
-- Mask sensitive values in vault inspection and require explicit consent to
-  reveal them. Before reset, say exactly which data will be cleared and
-  which files and remote settings are affected. Preserve the existing vault
-  if replacement fails.
+- Mask sensitive values in vault inspection. Require explicit consent for any
+  terminal reveal supported by the project. Before reset, say exactly which
+  data will be cleared and which files and remote settings are affected.
+  Preserve the existing vault if replacement fails.
 - Distinguish an Android APK keystore from an OpenPGP publishing key. If
   managing OpenPGP keys, discover local keys in the background and keep
   **Create a new key** available while discovery runs. Ignore late results
@@ -191,10 +108,10 @@ workspace and mark missing evidence honestly.
   target, source, configuration, and built artifacts. Require another preview
   on mismatch. Otherwise show the best available diff, verify the reviewed
   target and inputs again before mutation, and state the limits of the review.
-  Browser apply requires explicit approval. For destructive removal, reset,
-  or consequential replacement, show intent, scope and consequences and
-  require deliberate confirmation, including the exact target name where
-  appropriate. A countdown never authorizes a destructive action.
+  For destructive removal, reset, or consequential replacement, show intent,
+  scope and consequences and require deliberate confirmation. Ask for the
+  exact target name where appropriate. A countdown never authorizes a
+  destructive action.
 - Keep workflow generation deterministic. Separate project configuration from
   templates and runtime computations. Generate missing files when authorized,
   show diffs for changed files, and require explicit overwrite approval.
@@ -210,21 +127,10 @@ workspace and mark missing evidence honestly.
 
 ## Verify and deliver
 
-Test the normal entry points and the transitions that commonly regress.
-Cover first and repeat runs, edited prompts stopping countdowns, long reviews
-on a small terminal, canceled confirmations, vault recovery, and delayed
-discovery completing after the user moves on. Mock external writes or use
-disposable test resources. Run relevant checks on Linux and Windows when
-both are supported, and on macOS for Xcode-specific execution. For the
-browser, verify keyboard navigation, narrow layout, environment isolation,
-idle lock/unlock, stale requests, report redaction, cancellation, and return
-to Actions. Include failed and partial operations and unsupported capabilities.
-Verify that preview, status, and drift cannot apply changes, and that terminal,
-browser, and CI preserve the same target and approval rules. Document launch
+Test first and repeat runs, vault recovery, canceled confirmations, partial
+failures, and delayed discovery completing after the user moves on. Mock
+external writes or use disposable test resources. Verify that preview, status,
+and drift cannot apply changes. Check that terminal, browser, and CI use the
+same target and apply their documented approval policies. Document launch
 commands, prerequisites, credential storage, and recovery. Report what was
 actually verified.
-
-Reference implementations include
-[Android Repository Setup](https://github.com/lambdawalker/gradle.android-repo-setup)
-and [Maven Key](https://github.com/lambdawalker/python.utilities.maven-key).
-Use their patterns without copying project-specific coordinates or policy.

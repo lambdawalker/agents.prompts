@@ -98,7 +98,7 @@ Pin historical guides/examples/API/translation trees to retained immutable sourc
 
 ## Owner setup, validation and delivery
 
-Use the shared Rust setup wizard and generated `setup.sh` / `setup.bat` / `.project/setup/bootstrap.ps1`; do not recreate a Python GitHub environment wizard. Preserve existing encrypted local vault/signing conventions, secret masking, concrete review, blank-input preservation and partial-write recovery. Distinguish temporary GitHub setup authentication, Actions `GITHUB_TOKEN`, Central credentials, Maven OpenPGP keys and APK keystores. No secrets in source, logs, process arguments, fixtures or reports. Shared wizard guidance: [terminal setup](setup-wizards.md).
+Use the shared Rust setup wizard and generated `setup.sh` / `setup.bat` / `.project/setup/bootstrap.ps1`; do not recreate a Python GitHub environment wizard. Preserve existing encrypted local vault/signing conventions, secret masking, concrete review, blank-input preservation and partial-write recovery. Distinguish temporary GitHub setup authentication, Actions `GITHUB_TOKEN`, Central credentials, Maven OpenPGP keys and APK keystores. No secrets in source, logs, process arguments, fixtures or reports. See the [terminal wizard prompt](setup-wizards-terminal.md).
 
 Document namespace/token/signing prerequisites, environment names and actual permissions. Inspect secret-free environments too. Preserve existing timers/protection rules; report unsupported plan/visibility features and required owner actions without pretending they were configured. Do not run setup against live settings as part of offline migration validation.
 
