@@ -43,8 +43,8 @@ the [browser wizard prompt](setup-wizards-browser.md) for the local site.
   target clears prior acknowledgment. For destructive actions, use the
   project's required deliberate confirmation, including a typed target where
   specified, without a timer. Follow the project's countdown rule for eligible
-  routine deployment approval without adding an acknowledgment requirement. Reserve
-  **Close** for the result and show whether changes were applied, skipped, or
+  routine deployment approval without adding an acknowledgment requirement.
+  Reserve **Close** for the result and show whether changes were applied, skipped, or
   failed. Show 100% only after the operation succeeds.
 
 ## Verify the terminal interface
