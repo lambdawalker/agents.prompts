@@ -32,11 +32,13 @@ owns each operation and its state, even when one workspace exposes them together
   recovery path. Separate first-run setup, routine updates, inspection,
   recovery, and reset. For a design task, document the target scopes,
   supported actions, and evidence available for each interface.
-- Keep one implementation of task discovery, validation, approvals, execution,
-  and persistence. The terminal and browser render the same workflow and invoke
-  the same typed operations. Noninteractive launchers call that engine with
-  explicit inputs, target and applicable approval. Keep project-specific
-  commands, tools, resources, and verification in the owning implementation.
+- Within each owning tool, implement task discovery, validation, approvals,
+  execution, and persistence once. If it offers both terminal and browser
+  interfaces, have them render the same workflow and invoke the same typed
+  operations. Noninteractive launchers call that engine with explicit inputs,
+  target and applicable approval. A workspace spanning tools coordinates their
+  typed operations; each tool still owns its commands, credentials, state,
+  resources, and verification.
 - Define a small data contract for project and target identity, available
   actions, settings (type, label, source, help, validation and sensitivity),
   progress stages and substeps, prompts, results, and any supported artifact
@@ -75,18 +77,21 @@ including its workspace layout, session, controls, and evidence views.
 
 ## Protect credentials and signing material
 
-- Classify answers before storing them. Save permitted, validated reusable
-  answers promptly in an encrypted local vault so interrupted runs can
-  resume. Respect stricter destination rules for ephemeral tokens. Keep
-  the vault outside the checkout in the project's user-owned secrets
-  directory, such as `~/.projects/<project>/secrets`.
+- Classify answers before storing them. Save permitted reusable secrets
+  promptly in the owning tool's encrypted vault and validated nonsecret answers
+  in scoped project records so interrupted runs can resume. Respect stricter
+  destination rules for ephemeral tokens. Use the owning tool's established
+  vault location and migration rules: Android retains its existing vault;
+  deployable Go + AWS projects use the ignored repository `.deploy/` vault
+  required by the deployment rules. For a new tool without a defined policy,
+  use a user-owned secrets directory outside the checkout.
 - Use authenticated encryption and a supported password KDF. Write vault
   updates atomically and serialize concurrent writers. Never change the
   permissions of an existing directory the tool does not own. Keep secrets
   out of logs, diffs, process arguments, repository files, and screenshots.
-- On first use, create and confirm the unlock passphrase explicitly. Use the
-  project's existing storage location and migration rules. Keep
-  provider-managed sign-in caches in their normal storage.
+- When creating a needed vault for the first time, capture and confirm its
+  unlock passphrase explicitly. Unlock an existing vault without replacing
+  its passphrase. Keep provider-managed sign-in caches in their normal storage.
 - Mask sensitive values in vault inspection. Require explicit consent for any
   terminal reveal supported by the project. Before reset, say exactly which
   data will be cleared and which files and remote settings are affected.
