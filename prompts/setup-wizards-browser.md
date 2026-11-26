@@ -36,8 +36,9 @@ semantics with the project's tooling.
   credential scoped to this wizard instance. Bootstrap the browser with a
   one-time local handoff that removes any launch secret before it can enter
   ordinary request URLs, persistent history, referrers, or logs. Reject
-  mismatched Host values and cross-origin API requests; require the session
-  and CSRF protection for state-changing requests. Check the current action, prompt and
+  mismatched Host values and cross-origin API requests. Require a valid session
+  for every private API, event stream, and report/download request, plus CSRF
+  protection for state-changing requests. Check the current action, prompt and
   target on the server. Serve app assets locally with a restrictive content
   policy. Renderer requests select declared actions and submit typed fields.
   The server owns command selection, credential access, execution, and
@@ -53,10 +54,11 @@ semantics with the project's tooling.
   sessions. Require explicit approval for apply.
 - After completion, failure, or stop, keep a reviewable result and a route
   back to Actions in the same session. Report a stop request as pending until
-  the operation terminates; show any partial writes and its confirmed outcome
-  before releasing its locks. Offer copyable sanitized diagnostics and show
-  confirmed outputs. The process log must not expose raw state, command
-  arguments containing secrets, or provider sign-in transcripts.
+  local execution and cleanup finish, then release its locks. Show confirmed
+  results, identify uncertain remote writes, and provide recovery steps.
+  Offer copyable sanitized diagnostics and show confirmed outputs. The process
+  log must not expose raw state, command arguments containing secrets, or
+  provider sign-in transcripts.
 
 ## Show only evidence the operation can produce
 
