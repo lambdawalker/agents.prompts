@@ -67,6 +67,17 @@ Use IMPLEMENT to build an agreed design, citing its specification. Use audit-onl
 | [Terminal wizard](prompts/setup-wizards-terminal.md) | Task menus, saved defaults, countdowns, confirmation screens, and console behavior. |
 | [Browser wizard](prompts/setup-wizards-browser.md) | Local wizard site, workspace layout, private sessions, plan review, and artifact views. |
 
+## Wizard implementation studies
+
+These studies record implemented behavior and capture steps at pinned source
+revisions. Use the prompts above as the reusable requirements; check the
+current tool before applying a study's examples elsewhere.
+
+| Study | Focus |
+| --- | --- |
+| [Android repository setup](studies/android-repository-setup-wizard.md) | Gradle module discovery, module tabs, scoped actions, Settings inputs, vault, signing values and exports. |
+| [Infra Composer deployment](studies/infra-composer-deploy-wizard.md) | Environment targets, preview/apply flow, plan evidence, session and vault, and deployment workspace. |
+
 The former [Multi-repository documentation](prompts/multi-repository-documentation.md) entry redirects to the system-integrated workflow. Its ownership, branch consolidation, and release safeguards have been retained there.
 
 ## Usage
