@@ -16,6 +16,12 @@ scope. Load both when the project provides both interfaces.
 | Web | Reuse the project's build and deployment tools. Model the applicable package or site, build output, preview or production target and hostname. If deployment already uses Composer, keep the pinned CLI and the project's supported build hooks, as in [Card Designer](https://github.com/lambdawalker/site.card-designer/blob/main/README.md#aws-deployment). |
 | Compatible Go + AWS | Follow the [Go + AWS wizard rules](libraries/go-aws-common.md#deployment-wizard-requirements-for-deployable-go--aws-projects). Reuse the shared Infra Composer CLI, terminal and browser approval flows, and deployment record and vault locations. |
 
+For observed implementations and local capture instructions, see the
+[Android setup study](../studies/android-repository-setup-wizard.md) and
+[Infra Composer deployment study](../studies/infra-composer-deploy-wizard.md).
+These are versioned examples; inspect the current source before transplanting
+their behavior.
+
 Choose the terminal library, local server, and provider integrations to fit the
 project's supported languages and operating systems. A project can use different
 tools for local setup, app release, and backend deployment. Identify which tool
@@ -56,12 +62,18 @@ owns each operation and its state, even when one workspace exposes them together
   standalone launcher, consider a pinned uv script with inline dependencies.
   Keep reusable implementation in the tool package and project settings in
   the consumer's existing configuration directory.
-- Resolve inputs before asking. Use explicit values first, then valid saved
-  answers for the exact scope, verified discovery, and project defaults. A
-  conflict between an explicit identity and the saved scope requires resolution.
-  Report the source of a suggestion without exposing a secret. Allow overrides
-  where safe. Save accepted, validated reusable answers without marking an
-  operation complete prematurely.
+- Resolve inputs before asking. Use an explicit value for the active target
+  first, then a compatible typed draft from another target in this session,
+  valid saved answers for the exact scope, verified discovery, and project
+  defaults. Share only semantically identical fields (for example a GitHub
+  access token used by two modules), with destination and environment identity
+  included where relevant. An explicit blank or local override wins over a
+  cross-target suggestion; never spread module-specific signing material,
+  application IDs, or an unrelated publisher's credentials. A conflict between
+  an explicit identity and the saved scope requires resolution. Report the
+  source of a suggestion without exposing a secret. Allow overrides where
+  safe. Save accepted, validated reusable answers without marking an operation
+  complete prematurely.
 
 ## Terminal setup and deployment wizards
 
@@ -102,6 +114,16 @@ including its workspace layout, session, controls, and evidence views.
   after the user leaves the step. Show identities, full fingerprints, and
   dates when available. Verify the selected key and passphrase before use.
   Confirm public keyserver uploads and local key deletion separately.
+- When new signing material needs a passphrase, offer a generated value at the
+  point of input and an adjacent regenerate control. Use an operating-system
+  cryptographic random source and unbiased selection; define and test the
+  generator's entropy and output rules. An Android setup may generate 25
+  pronounceable invented words from syllable rules without bundling a word
+  dictionary, plus an invented key alias. Apply the generated value to its
+  confirmation field, but never silently replace an existing key or rotate a
+  saved passphrase. Guard asynchronous defaults so late generation cannot
+  overwrite a user's edit or a new target. Keep generated values available for
+  authorized export until the session locks or closes.
 
 ## Preview, apply, and recover
 
